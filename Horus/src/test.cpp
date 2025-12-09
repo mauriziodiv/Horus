@@ -125,7 +125,7 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 		// Call the actual function being tested
 		std::vector<SceneObject*> sceneObjects;
 		bool result = SceneBuilder(args[0], sceneObjects);
-
+		
 		// Display results
 		if (result)
 		{
@@ -135,7 +135,11 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 			for (int i = 0; i < sceneObjects.size(); ++i)
 			{
 				std::string object_name = sceneObjects[i]->getObjectName();
+				Vector3D<float> position = sceneObjects[i]->getPosition();
 				std::cout << "  SceneObject[" << i << "] Name: " << object_name;
+				std::cout << std::endl;
+
+				std::cout << "  position: " << position.GetX() << " " << position.GetY() << " " << position.GetZ();
 				std::cout << std::endl;
 			}
 		}
@@ -168,4 +172,4 @@ void RunTests(TestSelection Test, std::vector<std::string> args)
 	}
 
 	std::cout << "Tests Completed." << std::endl;
-}////////////////////////////////////////////////
+}

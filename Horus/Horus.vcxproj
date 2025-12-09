@@ -23,12 +23,14 @@
     <ClCompile Include="src\hrs.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\util.cpp" />
+    <ClCompile Include="src\vec_math.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\Horus.h" />
     <ClInclude Include="headers\hrs.h" />
     <ClInclude Include="headers\test.h" />
     <ClInclude Include="headers\util.h" />
+    <ClInclude Include="headers\vec_math.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

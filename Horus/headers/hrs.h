@@ -2,6 +2,14 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "vec_math.h"
+
+enum class ParameterType {
+	POSITION,
+	SIZE
+};
+
+extern std::unordered_map<std::string, ParameterType> parameterMap;
 
 enum class SceneObjectType {
 	GEOMETRY,
@@ -26,22 +34,19 @@ class SceneObject {
 
 	public:
 
-		SceneObject(SceneObjectType t)
-		{
-			type = t;
-		}
+		SceneObject(SceneObjectType t) : type(t), position(0.0f, 0.0f, 0.0f) {}
 
 		SceneObjectType getType()
 		{
 			return type;
 		}
 
-		void setPosition(int p)
+		void setPosition(float x, float y, float z)
 		{
-			position = p;
+			position = Vector3D<float>(x, y, z);
 		}
 
-		int getPosition()
+		Vector3D<float> getPosition()
 		{
 			return position;
 		}
@@ -51,7 +56,7 @@ class SceneObject {
 	private:
 		SceneObjectType type;
 
-		int position;
+		Vector3D<float> position;
 
 };
 
@@ -118,15 +123,26 @@ class PointLightObject : public LightObject {
 // Derived classes for specific scene objects
 class CameraObject : public SceneObject {
 	public:
-		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType) {}
+		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float> (0.0f, 0.0f, 0.0f)) {}
 
 		CameraType getCameraType()
 		{
 			return cameraType;
 		}
+
+		void set_lookAt(float x, float y, float z)
+		{
+			lookAt = Vector3D<float>(x, y, z);
+		}
+
+		Vector3D<float> get_lookAt()
+		{
+			return lookAt;
+		}
 		
 	private:
 		CameraType cameraType;
+		Vector3D<float> lookAt;
 };
 
 class PerspectiveCameraObject : public CameraObject {
@@ -143,3 +159,7 @@ class PerspectiveCameraObject : public CameraObject {
 };
 
 bool SceneBuilder(std::string, std::vector<SceneObject*>&);
+
+void tokenSearch(std::ifstream& file, char c, std::string& token);
+void setObjectPosition(std::ifstream&, std::string&, std::vector<SceneObject*>&);
+void setObjectParamters(std::ifstream&, std::string&);

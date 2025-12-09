@@ -1,7 +1,85 @@
 #include "hrs.h"
 #include <fstream>
+#include <sstream>
 
-// Tokenization function
+std::unordered_map<std::string, ParameterType> parameterMap = {
+	{"pos", ParameterType::POSITION},
+	{"size", ParameterType::SIZE}
+};
+
+void charSearch(std::ifstream& file, char c, std::string& token)
+{
+	file.get();
+
+	while (!file.eof() && file.peek() != c)
+	{
+		token += file.get();
+	}
+
+	file.get();
+}
+
+void tokenSearch(std::ifstream& file, char c, std::string& token)
+{
+	token.clear();
+
+	while (!file.eof() && std::isspace(file.peek()))
+	{
+		file.get();
+	}
+
+	if (file.peek() == c) // What if this is different from '-'? It should keep searching for it ????????
+	{
+		file.get();
+
+		while (!file.eof() && file.peek() != c)
+		{
+			token += file.get();
+		}
+
+		file.get();
+		}
+}
+
+void setObjectPosition(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects)
+{
+	tokenSearch(file, '-', token);
+
+	if (parameterMap.find(token) != parameterMap.end())
+	{
+		ParameterType pType = parameterMap[token];
+
+		if (pType == ParameterType::POSITION)
+		{
+			// Parse position values
+			tokenSearch(file, '/', token);
+
+			if (!token.empty())
+			{
+				std::stringstream s(token);
+
+				float x, y, z;
+				char comma;
+
+				s >> x >> comma >> y >> comma >> z;
+				sceneObjects.back()->setPosition(x, y, z);
+			}
+		}
+	}
+}
+
+void setObjectParameters(std::ifstream& file, std::string& token)
+{
+	while (!file.eof() || file.peek() != ';')
+	{
+		tokenSearch(file, '-', token);
+
+		if (!token.empty())
+		{
+			// FROM HERE
+		}
+	}
+}
 
 bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 {
@@ -28,7 +106,6 @@ bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 		return false;
 	}
 
-
 	while (!file.eof())
 	{
 		std::string token;
@@ -36,13 +113,7 @@ bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 
 		if (file.peek() == '(')
 		{
-			file.get();
-
-			while (!file.eof() && file.peek() != ')')
-			{
-				token += file.get();
-			}
-			file.get();
+			charSearch(file, ')', token);
 
 			if (GeometryObjectsMap.find(token) != GeometryObjectsMap.end())
 			{
@@ -50,10 +121,11 @@ bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 
 				switch (gType)
 				{
-				case GeometryType::SPHERE:
-					// Create a sphere object
-					sceneObjects.push_back(new SphereObject(1.0f));
-					break;
+					case GeometryType::SPHERE:
+						// Create a sphere object
+						sceneObjects.push_back(new SphereObject(1.0f));
+						setObjectPosition(file, token, sceneObjects);
+						break;
 				}
 			}
 
@@ -66,6 +138,7 @@ bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 					case LightType::POINT:
 						// Create a point light object
 						sceneObjects.push_back(new PointLightObject(1.0f));
+						setObjectPosition(file, token, sceneObjects);
 						break;
 				}
 			}
@@ -79,6 +152,7 @@ bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
 					case CameraType::PERSPECTIVE:
 						// Create a perspective camera object
 						sceneObjects.push_back(new PerspectiveCameraObject(45.0f));
+						setObjectPosition(file, token, sceneObjects);
 						break;
 				}
 			}
