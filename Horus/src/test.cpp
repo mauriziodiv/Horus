@@ -136,11 +136,24 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 			{
 				std::string object_name = sceneObjects[i]->getObjectName();
 				Vector3D<float> position = sceneObjects[i]->getPosition();
+				float size = sceneObjects[i]->getSize();
+				float intensity = sceneObjects[i]->getIntensity();
+				Vector3D<float> lookAt = sceneObjects[i]->get_lookAt();
+
 				std::cout << "  SceneObject[" << i << "] Name: " << object_name;
 				std::cout << std::endl;
 
 				std::cout << "  position: " << position.GetX() << " " << position.GetY() << " " << position.GetZ();
 				std::cout << std::endl;
+
+				std::cout << "  size: " << size;
+				std::cout << std::endl;
+
+				std::cout << "  intensity: " << intensity;
+				std::cout << std::endl;
+
+				std::cout << "  look at: " << lookAt.GetX() << " " << lookAt.GetY() << " " << lookAt.GetZ();
+				std::cout << std::endl << std::endl;
 			}
 		}
 		else
