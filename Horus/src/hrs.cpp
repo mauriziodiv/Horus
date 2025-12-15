@@ -5,6 +5,7 @@
 std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"pos", ParameterType::POSITION},
 	{"size", ParameterType::SIZE},
+	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
 	{"lat", ParameterType::LAT}
 };
@@ -77,9 +78,13 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						sceneObjects.back()->setSize(std::stof(token));
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+						
+						if (geometryObject)
+						{
+							geometryObject->setSize(std::stof(token));
+						}
 					}
-
 					break;
 
 				case ParameterType::INTENSITY:
@@ -88,10 +93,29 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						sceneObjects.back()->setIntensity(std::stof(token));
+						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back());
+						
+						if (lightObject)
+						{
+							lightObject->setIntensity(std::stof(token));
+						}
 					}
-
 					break;
+
+				case ParameterType::RADIUS:
+
+						tokenSearch(file, '/', token);
+
+						if (!token.empty())
+						{
+							SphereObject* sphereObject = dynamic_cast<SphereObject*>(sceneObjects.back());
+
+							if (sphereObject)
+							{
+								sphereObject->setSize(std::stof(token));
+							}
+						}
+						break;
 
 				case ParameterType::LAT:
 
@@ -105,11 +129,14 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
-						sceneObjects.back()->set_lookAt(x, y, z);
+						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back());
+
+						if (cameraObject)
+						{
+							cameraObject->set_lookAt(x, y, z);
+						}
 					}
-
 					break;
-
 				}
 		}
 		else if (!token.empty())

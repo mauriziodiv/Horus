@@ -114,7 +114,7 @@ void T_MAIN_LINE_ARGS(std::vector<std::string> args)
 
 void T_SCENE_BUILDER(std::vector<std::string> args)
 {
-	std::cout << "Scene Builder Test Runnig" << std::endl;
+	std::cout << "Scene Builder Test Running" << std::endl;
 
 	if (args.empty())
 	{
@@ -134,26 +134,11 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 
 			for (int i = 0; i < sceneObjects.size(); ++i)
 			{
-				std::string object_name = sceneObjects[i]->getObjectName();
-				Vector3D<float> position = sceneObjects[i]->getPosition();
-				float size = sceneObjects[i]->getSize();
-				float intensity = sceneObjects[i]->getIntensity();
-				Vector3D<float> lookAt = sceneObjects[i]->get_lookAt();
-
-				std::cout << "  SceneObject[" << i << "] Name: " << object_name;
 				std::cout << std::endl;
-
-				std::cout << "  position: " << position.GetX() << " " << position.GetY() << " " << position.GetZ();
+				std::cout << "Scene Object[" << i << "]:" << std::endl;
+				sceneObjects[i]->printProperties();
 				std::cout << std::endl;
-
-				std::cout << "  size: " << size;
 				std::cout << std::endl;
-
-				std::cout << "  intensity: " << intensity;
-				std::cout << std::endl;
-
-				std::cout << "  look at: " << lookAt.GetX() << " " << lookAt.GetY() << " " << lookAt.GetZ();
-				std::cout << std::endl << std::endl;
 			}
 		}
 		else

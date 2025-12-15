@@ -1,12 +1,14 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <iostream>
 #include <unordered_map>
 #include "vec_math.h"
 
 enum class ParameterType {
 	POSITION,
 	SIZE,
+	RADIUS,
 	INTENSITY,
 	LAT
 };
@@ -53,14 +55,13 @@ class SceneObject {
 			return position;
 		}
 
-		virtual void setSize(float s) {};
-		virtual float getSize() { return 0.0f; };
+		virtual void printProperties()
+		{
+			std::cout << "position: " << getPosition().GetX() << " " << getPosition().GetY() << " " << getPosition().GetZ() << std::endl;
+		}
 
 		virtual void setIntensity(float i) {};
 		virtual float getIntensity() { return 0.0f; };
-
-		virtual void set_lookAt(float x, float y, float z) {};
-		virtual Vector3D<float> get_lookAt() { return Vector3D<float>(0.0f, 0.0f, 0.0f); };
 		
 		virtual std::string getObjectName() = 0;
 
@@ -74,7 +75,9 @@ class SceneObject {
 
 // Derived classes for specific scene objects
 class GeometryObject : public SceneObject {
+
 	public:
+
 		GeometryObject(GeometryType gType) : SceneObject(SceneObjectType::GEOMETRY), geometryType(gType) {}
 
 		GeometryType getGeometryType()
@@ -82,14 +85,20 @@ class GeometryObject : public SceneObject {
 			return geometryType;
 		}
 
-		void setSize (float s) override
+		virtual void setSize (float s)
 		{
 			size = s;
 		}
 
-		float getSize () override
+		virtual float getSize ()
 		{
 			return size;
+		}
+
+		virtual void printProperties() override
+		{
+			SceneObject::printProperties();
+			std::cout << "size: " << size << std::endl;
 		}
 
 	private:
@@ -99,14 +108,33 @@ class GeometryObject : public SceneObject {
 
 class SphereObject : public GeometryObject {
 	public:
-		SphereObject(int r) : GeometryObject(GeometryType::SPHERE), radius(r) {}
+		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE), radius(r) { GeometryObject::setSize(r); }
 		
 		std::string getObjectName() override
 		{
-			return "Sphere";
+			return name;
+		}
+
+		void setSize(float r) override
+		{
+			GeometryObject::setSize(r);
+			radius = r;
+		}
+
+		float getSize() override
+		{
+			return radius;
+		}
+
+		virtual void printProperties() override
+		{
+			GeometryObject::printProperties();
+			std::cout << "Type: " << getObjectName() << std::endl;
+			std::cout << "radius: " << radius << std::endl;
 		}
 
 	private:
+		std::string name = "Sphere";
 		float radius;
 };
 
@@ -122,12 +150,12 @@ class LightObject : public SceneObject {
 			return lightType;
 		}
 
-		void setSize(float s) override
+		void setSize(float s)
 		{
 			size = s;
 		}
 
-		float getSize() override
+		float getSize()
 		{
 			return size;
 		}
@@ -142,6 +170,13 @@ class LightObject : public SceneObject {
 			return intensity;
 		}
 
+		virtual void printProperties() override
+		{
+			SceneObject::printProperties();
+			std::cout << "size: " << size << std::endl;
+			std::cout << "intensity: " << intensity << std::endl;
+		}
+
 	private:
 		LightType lightType;
 		float size;
@@ -150,15 +185,21 @@ class LightObject : public SceneObject {
 
 class PointLightObject : public LightObject {
 	public:
-		PointLightObject(float i) : LightObject(LightType::POINT), intensity(i) {}
+		PointLightObject(float i) : LightObject(LightType::POINT) { LightObject::setSize(1.0f); }
 
 		std::string getObjectName() override
 		{
-			return "Point Light";
+			return name;
+		}
+
+		virtual void printProperties() override
+		{
+			LightObject::printProperties();
+			std::cout << "Type: " << getObjectName() << std::endl;
 		}
 
 	private:
-		float intensity;
+		std::string name = "Point Light";
 };
 
 // CAMERA ###############################################
@@ -173,14 +214,20 @@ class CameraObject : public SceneObject {
 			return cameraType;
 		}
 
-		void set_lookAt(float x, float y, float z) override
+		void set_lookAt(float x, float y, float z)
 		{
 			lookAt = Vector3D<float>(x, y, z);
 		}
 
-		Vector3D<float> get_lookAt() override
+		Vector3D<float> get_lookAt()
 		{
 			return lookAt;
+		}
+
+		virtual void printProperties() override
+		{
+			SceneObject::printProperties();
+			std::cout << "look at: " << get_lookAt().GetX() << " " << get_lookAt().GetY() << " " << get_lookAt().GetZ() << std::endl;
 		}
 		
 	private:
@@ -194,10 +241,17 @@ class PerspectiveCameraObject : public CameraObject {
 
 		std::string getObjectName() override
 		{
-			return "Camera Perspective";
+			return name;
+		}
+
+		virtual void printProperties() override
+		{
+			CameraObject::printProperties();
+			std::cout << "Type: " << getObjectName() << std::endl;
 		}
 
 	private:
+		std::string name = "Camera Perspective";
 		float fieldOfView;
 };
 
