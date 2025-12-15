@@ -134,10 +134,8 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 
 			for (int i = 0; i < sceneObjects.size(); ++i)
 			{
-				std::cout << std::endl;
 				std::cout << "Scene Object[" << i << "]:" << std::endl;
 				sceneObjects[i]->printProperties();
-				std::cout << std::endl;
 				std::cout << std::endl;
 			}
 		}
