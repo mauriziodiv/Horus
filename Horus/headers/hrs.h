@@ -57,7 +57,7 @@ class SceneObject {
 
 		virtual void printProperties()
 		{
-			std::cout << "position: " << getPosition().GetX() << " " << getPosition().GetY() << " " << getPosition().GetZ() << std::endl;
+			std::cout << "position: " << getPosition().getX() << " " << getPosition().getY() << " " << getPosition().getZ() << std::endl;
 		}
 
 		virtual void setIntensity(float i) {};
@@ -98,7 +98,7 @@ class GeometryObject : public SceneObject {
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
-			std::cout << "size: " << size << std::endl;
+			//std::cout << "size: " << size << std::endl;
 		}
 
 	private:
@@ -227,7 +227,7 @@ class CameraObject : public SceneObject {
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
-			std::cout << "look at: " << get_lookAt().GetX() << " " << get_lookAt().GetY() << " " << get_lookAt().GetZ() << std::endl;
+			std::cout << "look at: " << get_lookAt().getX() << " " << get_lookAt().getY() << " " << get_lookAt().getZ() << std::endl;
 		}
 		
 	private:
