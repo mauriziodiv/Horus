@@ -27,7 +27,7 @@ int Testing(int& argc, char* argv[])
 
 		if (argc == 3 && std::string(argv[2]) == "--list")
 		{
-			// print a lise automatically
+			// List available tests
 			std::cout << "Available Tests:" << std::endl;
 			std::cout << "  MAIN_LINE_ARGS" << std::endl;
 			std::cout << "  SCENE_BUILDER" << std::endl;

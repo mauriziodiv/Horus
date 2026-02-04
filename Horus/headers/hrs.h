@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 #include "vec_math.h"
+#include "ray.h"
 
 enum class ParameterType {
 	POSITION,
@@ -101,6 +102,8 @@ class GeometryObject : public SceneObject {
 			//std::cout << "size: " << size << std::endl;
 		}
 
+		virtual float rayIntersection(Ray& ray, float tMin, float tMax, float t) { return -1.0f; };
+
 	private:
 		GeometryType geometryType;
 		float size;
@@ -131,6 +134,40 @@ class SphereObject : public GeometryObject {
 			GeometryObject::printProperties();
 			std::cout << "Type: " << getObjectName() << std::endl;
 			std::cout << "radius: " << radius << std::endl;
+		}
+
+		float rayIntersection(Ray& ray, float tMin, float tMax, float t) override
+		{
+			float a = ray.getDirection() * ray.getDirection();
+
+			Vector3D<float> oc = ray.getOrigin() - getPosition();
+			float b = ((ray.getDirection()) * oc) * 2.0f;
+
+			float c = (oc * oc) - (radius * radius);
+
+			float discriminant = (b * b) - (4 * a * c);
+
+			if (discriminant < 0)
+			{
+				return -1.0f;
+			}
+
+			float sqr = std::sqrt(discriminant);
+
+			float t1 = (-b - sqr) / (2.0f * a);
+			float t2 = (-b + sqr) / (2.0f * a);
+
+			if (t1 > tMin && t1 < tMax)
+			{
+				return t1;
+			}
+
+			if (t2 > tMin && t2 < tMax)
+			{
+				return t2;
+			}
+		
+			return -1.0f;
 		}
 
 	private:

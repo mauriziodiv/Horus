@@ -34,19 +34,20 @@ template <typename T> class Vector3D
 
 public:
 
+	Vector3D() : x(T(0)), y(T(0)), z(T(0)) {}
 	Vector3D(T v1, T v2, T v3) : x(v1), y(v2), z(v3) {}
 
-	T getX()
+	T getX() const
 	{
 		return x;
 	}
 
-	T getY()
+	T getY() const
 	{
 		return y;
 	}
 
-	T getZ()
+	T getZ() const
 	{
 		return z;
 	}

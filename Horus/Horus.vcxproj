@@ -19,22 +19,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ray.cpp" />
+    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\Horus.cpp" />
     <ClCompile Include="src\hrs.cpp" />
+    <ClCompile Include="src\output.cpp" />
+    <ClCompile Include="src\ray.cpp" />
+    <ClCompile Include="src\render.cpp" />
     <ClCompile Include="src\sampler.cpp" />
+    <ClCompile Include="src\scene.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\vec_math.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\camera.h" />
     <ClInclude Include="headers\Horus.h" />
     <ClInclude Include="headers\hrs.h" />
+    <ClInclude Include="headers\output.h" />
+    <ClInclude Include="headers\ray.h" />
+    <ClInclude Include="headers\render.h" />
     <ClInclude Include="headers\sampler.h" />
+    <ClInclude Include="headers\scene.h" />
     <ClInclude Include="headers\test.h" />
     <ClInclude Include="headers\util.h" />
     <ClInclude Include="headers\vec_math.h" />
-    <ClInclude Include="ray.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
