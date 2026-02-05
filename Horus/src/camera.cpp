@@ -20,6 +20,7 @@ Vector3D<float> Camera::getPosition()
 	return position;
 }
 
+// Sets the window dimensions and calculates the aspect ratio, window size, and camera parameters accordingly.
 void Camera::setWindow(float w, float h)
 {
 	width = w;
@@ -29,7 +30,7 @@ void Camera::setWindow(float w, float h)
 	window_height = 2.0f;
 	window_width = window_height * aspect_ratio;
 
-	lower_left_corner = Vector3D<float>(position.getX() - (window_width * 0.5), position.getY() - (window_height * 0.5), position.getZ() - focal_length);
+	lower_left_corner = Vector3D<float>(position.x - (window_width * 0.5), position.y - (window_height * 0.5), position.z - focal_length);
 	horizontal = Vector3D<float>(window_width, 0.0f, 0.0f);
 	vertical = Vector3D<float>(0.0f, window_height, 0.0f);
 }
@@ -44,6 +45,7 @@ float Camera::getHeight()
 	return height;
 }
 
+// Generates a ray from the camera's position through the point on the image plane defined by the normalized coordinates (u, v).
 Ray Camera::genRay(float u, float v)
 {
 	 Vector3D<float> direction = lower_left_corner + (horizontal * u) + (vertical * v) - position;

@@ -5,6 +5,7 @@
 #include "scene.h"
 #include <iostream>
 
+// Validates the input arguments for the program.
 bool inputValidation(const std::vector<std::string>& inputDescription)
 {
 	switch (inputDescription.size())
@@ -24,11 +25,12 @@ bool inputValidation(const std::vector<std::string>& inputDescription)
 	return true;
 }
 
+// The main function of the program.
 int main(int argc, char* argv[])
 {
 
 	// Check for testing mode
-	int testResult = Testing(argc, argv);
+	int32_t testResult = Testing(argc, argv);
 
 	if (testResult == 0 || testResult == 1)
 	{

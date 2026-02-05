@@ -3,6 +3,6 @@
 #include <string>
 #include <vector>
 
-TestSelection StringToTestSelection(const std::string& testName);
+TestSelection StringToTestSelection(std::string_view testName);
 
 std::vector<std::string> GetMainLineArgs(char* argv[]);

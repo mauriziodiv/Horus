@@ -9,12 +9,12 @@ class Scene {
 
 	public:
 		Scene();
-		bool getScene(std::vector<SceneObject*>);
+		bool getScene(const std::vector<SceneObject*>& scene);
 
 		CameraObject* getCamera() { return camera; }
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
 		std::vector<LightObject*> getLights() { return lights; }
-		void setRenderOutput(std::string);
+		void setRenderOutput(const std::string& ro);
 		RenderOutput getRenderOutput() { return renderOutput; }
 		void render();
 

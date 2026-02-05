@@ -15,6 +15,7 @@ Sampler::Sampler()
 
 }
 
+// Generates a random point on the hemisphere with cosine-weighted distribution.
 Vector3D<float> Sampler::cosineWeightsampleHemisphere()
 {
 	float r1 = unitRandom.Generate();

@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <cstdint>
 
 template <typename T> class Point
 {
@@ -21,9 +22,6 @@ template <typename T> class Point
 			return y;
 		}
 
-
-	private:
-
 			T x;
 			T y;
 
@@ -36,21 +34,6 @@ public:
 
 	Vector3D() : x(T(0)), y(T(0)), z(T(0)) {}
 	Vector3D(T v1, T v2, T v3) : x(v1), y(v2), z(v3) {}
-
-	T getX() const
-	{
-		return x;
-	}
-
-	T getY() const
-	{
-		return y;
-	}
-
-	T getZ() const
-	{
-		return z;
-	}
 
 	T getLength()
 	{
@@ -73,27 +56,27 @@ public:
 
 	Vector3D operator+(const Vector3D& v) const
 	{
-		return Vector3D(x + v.getX(), y + v.getY(), z + v.getZ());
+		return Vector3D(x + v.x, y + v.y, z + v.z);
 	}
 
 	Vector3D& operator+=(const Vector3D& v)
 	{
-		x += v.getX();
-		y += v.getY();
-		z += v.getZ();
+		x += v.x;
+		y += v.y;
+		z += v.z;
 		return *this;
 	}
 
 	Vector3D operator-(const Vector3D& v) const
 	{
-		return Vector3D(x - v.getX(), y - v.getY(), z - v.getZ());
+		return Vector3D(x - v.x, y - v.y, z - v.z);
 	}
 
 	Vector3D& operator-=(const Vector3D& v)
 	{
-		x -= v.getX();
-		y -= v.getY();
-		z -= v.getZ();
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
 		return *this;
 	}
 
@@ -113,16 +96,16 @@ public:
 	// Dot product
 	T operator*(const Vector3D<T>& v) const
 	{
-		return (x * v.getX()) + (y * v.getY()) + (z * v.getZ());
+		return (x * v.x) + (y * v.y) + (z * v.z);
 	}
 
 	// Cross product
 	Vector3D operator|(const Vector3D<T>& v) const
 	{
 		return Vector3D(
-			(y * v.getZ()) - (z * v.getY()),
-			(z * v.getX()) - (x * v.getZ()),
-			(x * v.getY()) - (y * v.getX())
+			(y * v.z) - (z * v.y),
+			(z * v.x) - (x * v.z),
+			(x * v.y) - (y * v.x)
 		);
 	}
 
@@ -139,7 +122,6 @@ public:
 		return *this;
 	}
 
-private:
 	T x;
 	T y;
 	T z;
@@ -151,21 +133,21 @@ template <typename T> class Matrix4X4
 	public:
 		Matrix4X4() {
 		
-			for (int i = 0; i < 4; i++)
+			for (int32_t i = 0; i < 4; i++)
 			{
-				for (int j = 0; j < 4; j++)
+				for (int32_t j = 0; j < 4; j++)
 				{
 					i == j ? m4x4[i][j] = T(1) : m4x4[i][j] = T(0);
 				}
 			}
 		}
 
-		void setValue(int x, int y, T value)
+		void setValue(int32_t x, int32_t y, T value)
 		{
 			m4x4[x][y] = value;
 		}
 
-		T getValue(int x, int y)
+		T getValue(int32_t x, int32_t y)
 		{
 			return m4x4[x][y];
 		}
@@ -174,13 +156,13 @@ template <typename T> class Matrix4X4
 		{
 			Matrix4X4 result;
 
-			for (int i = 0; i < 4; i++)
+			for (int32_t i = 0; i < 4; i++)
 			{
-				for (int j = 0; j < 4; j++)
+				for (int32_t j = 0; j < 4; j++)
 				{
 					T sum = T(0);
 
-					for (int n = 0; n < 4; n++)
+					for (int32_t n = 0; n < 4; n++)
 					{
 						sum += m4x4[i][n] * m.getValue(n, j);
 					}
@@ -198,14 +180,14 @@ template <typename T> class Matrix4X4
 
 		Vector3D<T> operator* (const Vector3D<T>& v) const
 		{
-			T x = (m4x4[0][0] * v.getX()) + (m4x4[0][1] * v.getY()) + (m4x4[0][2] * v.getZ()) + m4x4[0][3];
-			T y = (m4x4[1][0] * v.getX()) + (m4x4[1][1] * v.getY()) + (m4x4[1][2] * v.getZ()) + m4x4[1][3];
-			T z = (m4x4[2][0] * v.getX()) + (m4x4[2][1] * v.getY()) + (m4x4[2][2] * v.getZ()) + m4x4[2][3];
+			T x = (m4x4[0][0] * v.x) + (m4x4[0][1] * v.y) + (m4x4[0][2] * v.z) + m4x4[0][3];
+			T y = (m4x4[1][0] * v.x) + (m4x4[1][1] * v.y) + (m4x4[1][2] * v.z) + m4x4[1][3];
+			T z = (m4x4[2][0] * v.x) + (m4x4[2][1] * v.y) + (m4x4[2][2] * v.z) + m4x4[2][3];
 
 			return Vector3D<T>(x, y, z);
 		}
 
-		static Matrix4X4 translation(T tx, T ty, T tz)
+		static Matrix4X4 Translation(T tx, T ty, T tz)
 		{
 			Matrix4X4 result;
 			result.setValue(0, 3, tx);
@@ -214,7 +196,7 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		static Matrix4X4 rotationX(T angle)
+		static Matrix4X4 RotationX(T angle)
 		{
 			Matrix4X4 result;
 
@@ -229,7 +211,7 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		static Matrix4X4 rotationY(T angle)
+		static Matrix4X4 RotationY(T angle)
 		{
 			Matrix4X4 result;
 
@@ -244,7 +226,7 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		static Matrix4X4 rotationZ(T angle)
+		static Matrix4X4 RotationZ(T angle)
 		{
 			Matrix4X4 result;
 
@@ -259,7 +241,7 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		static Matrix4X4 scaling(T sx, T sy, T sz)
+		static Matrix4X4 Scaling(T sx, T sy, T sz)
 		{
 			Matrix4X4 result;
 			result.setValue(0, 0, sx);
@@ -268,15 +250,15 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		T minor(int row, int col) const
+		T minor(int32_t row, int32_t col) const
 		{
 			T m[3][3];
-			int mRow = 0, mCol = 0;
-			for (int i = 0; i < 4; i++)
+			int32_t mRow = 0, mCol = 0;
+			for (int32_t i = 0; i < 4; i++)
 			{
 				if (i == row) continue;
 				mCol = 0;
-				for (int j = 0; j < 4; j++)
+				for (int32_t j = 0; j < 4; j++)
 				{
 					if (j == col) continue;
 					m[mRow][mCol] = m4x4[i][j];
@@ -299,26 +281,32 @@ template <typename T> class Matrix4X4
 				m4x4[0][3] * minor(0, 3);
 		}
 
-		Matrix4X4 inverse() const
+		Matrix4X4 inverse(bool& valid) const
 		{
 			Matrix4X4 result;
 			T det = determinant();
+
+			valid = true;
+
 			if (std::abs(det) < 1e-6)
 			{
-				return result; // Return identity if not invertible
+				valid = false;
+				return result;
 			}
-			for (int i = 0; i < 4; i++)
+
+			for (int32_t i = 0; i < 4; i++)
 			{
-				for (int j = 0; j < 4; j++)
+				for (int32_t j = 0; j < 4; j++)
 				{
 					T cofactor = ((i + j) % 2 == 0 ? 1 : -1) * minor(i, j);
 					result.setValue(j, i, cofactor / det); // Transpose while setting
 				}
 			}
+
 			return result;
 		}
 
-		static Matrix4X4 lookAt(const Vector3D<T>& eye, const Vector3D<T>& center, const Vector3D<T>& up)
+		static Matrix4X4 LookAt(const Vector3D<T>& eye, const Vector3D<T>& center, const Vector3D<T>& up)
 		{
 			Vector3D<T> f = center - eye;
 			f.normalize();
@@ -329,22 +317,22 @@ template <typename T> class Matrix4X4
 			Vector3D<T> u = s | f;
 			Matrix4X4 result;
 
-			result.setValue(0, 0, s.getX());
-			result.setValue(0, 1, s.getY());
-			result.setValue(0, 2, s.getZ());
-			result.setValue(1, 0, u.getX());
-			result.setValue(1, 1, u.getY());
-			result.setValue(1, 2, u.getZ());
-			result.setValue(2, 0, -f.getX());
-			result.setValue(2, 1, -f.getY());
-			result.setValue(2, 2, -f.getZ());
+			result.setValue(0, 0, s.x);
+			result.setValue(0, 1, s.y);
+			result.setValue(0, 2, s.z);
+			result.setValue(1, 0, u.x);
+			result.setValue(1, 1, u.y);
+			result.setValue(1, 2, u.z);
+			result.setValue(2, 0, -f.x);
+			result.setValue(2, 1, -f.y);
+			result.setValue(2, 2, -f.z);
 			result.setValue(0, 3, - (s * eye));
 			result.setValue(1, 3, - (u * eye));
 			result.setValue(2, 3, f * eye);
 			return result;
 		}
 
-		static Matrix4X4 perspective(T fovY, T aspect, T near, T far)
+		static Matrix4X4 Perspective(T fovY, T aspect, T near, T far)
 		{
 			Matrix4X4 result;
 			T f = T(1) / std::tan(fovY / T(2));
@@ -357,27 +345,33 @@ template <typename T> class Matrix4X4
 			return result;
 		}
 
-		Vector3D<T> screenToNDC(const Vector3D<T>& screenPos, int screenWidth, int screenHeight) const
+		Vector3D<T> screenToNDC(const Vector3D<T>& screenPos, int32_t screenWidth, int32_t screenHeight) const
 		{
-			T x = (screenPos.getX() / T(screenWidth)) * T(2) - T(1);
-			T y = T(1) - (screenPos.getY() / T(screenHeight)) * T(2); // Invert Y from screen space
-			return Vector3D<T>(x, y, screenPos.getZ());
+			T x = (screenPos.x / T(screenWidth)) * T(2) - T(1);
+			T y = T(1) - (screenPos.y / T(screenHeight)) * T(2); // Invert Y from screen space
+			return Vector3D<T>(x, y, screenPos.z);
 		}
 
-		Vector3D<T> NDCToScreen(const Vector3D<T>& ndc, int screenWidth, int screenHeight) const
+		Vector3D<T> NDCToScreen(const Vector3D<T>& ndc, int32_t screenWidth, int32_t screenHeight) const
 		{
-			T x = ((ndc.getX() + T(1)) / T(2)) * T(screenWidth);
-			T y = ((T(1) - ndc.getY()) / T(2)) * T(screenHeight); // Invert Y for screen space
-			return Vector3D<T>(x, y, ndc.getZ());
+			T x = ((ndc.x + T(1)) / T(2)) * T(screenWidth);
+			T y = ((T(1) - ndc.y) / T(2)) * T(screenHeight); // Invert Y for screen space
+			return Vector3D<T>(x, y, ndc.z);
 		}
 
-		static Vector3D<T> unproject(const Vector3D<T>& screenPos, const Matrix4X4& viewMatrix, const Matrix4X4& projectionMatrix, int screenWidth, int screenHeight)
+		static Vector3D<T> Unproject(const Vector3D<T>& screenPos, const Matrix4X4& viewMatrix, const Matrix4X4& projectionMatrix, int32_t screenWidth, int32_t screenHeight)
 		{
-			T ndcX = (screenPos.getX() / T(screenWidth)) * T(2) - T(1);
-			T ndcY = T(1) - (screenPos.getY() / T(screenHeight)) * T(2);
-			T ndcZ = screenPos.getZ() * T(2) - T(1);  // Convert [0,1] to [-1,1]
+			T ndcX = (screenPos.x / T(screenWidth)) * T(2) - T(1);
+			T ndcY = T(1) - (screenPos.y / T(screenHeight)) * T(2);
+			T ndcZ = screenPos.z * T(2) - T(1);  // Convert [0,1] to [-1,1]
 
-			Matrix4X4<T> invVP = (projectionMatrix * viewMatrix).inverse();
+			bool valid;
+			Matrix4X4<T> invVP = (projectionMatrix * viewMatrix).inverse(valid);
+
+			if (!valid)
+			{
+				return Vector3D<T>();
+			}
 
 			T x = ndcX, y = ndcY, z = ndcZ, w = T(1);
 

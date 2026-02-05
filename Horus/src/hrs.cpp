@@ -10,6 +10,7 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"lat", ParameterType::LAT}
 };
 
+// Reads characters from the file until it finds the specified character 'c', storing the characters in the 'token' string.
 void charSearch(std::ifstream& file, char c, std::string& token)
 {
 	file.get();
@@ -22,6 +23,7 @@ void charSearch(std::ifstream& file, char c, std::string& token)
 	file.get();
 }
 
+// Reads characters from the file, skipping whitespace, until it finds the specified character 'c', storing the characters in the 'token' string.
 void tokenSearch(std::ifstream& file, char c, std::string& token)
 {
 	token.clear();
@@ -44,6 +46,7 @@ void tokenSearch(std::ifstream& file, char c, std::string& token)
 		}
 }
 
+// Sets the parameters of the last created scene object based on the tokens read from the file.
 void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects)
 {
 	while (!file.eof() && file.peek() != ';')
@@ -68,7 +71,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
-						sceneObjects.back()->setPosition(x, y, z);
+						//sceneObjects.back()->setPosition(x, y, z);
+						sceneObjects.back()->position = Vector3D<float>(x, y, z);
 					}
 					break;
 
@@ -82,7 +86,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						
 						if (geometryObject)
 						{
-							geometryObject->setSize(std::stof(token));
+							//geometryObject->setSize(std::stof(token));
+							geometryObject->size = std::stof(token);
 						}
 					}
 					break;
@@ -97,7 +102,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						
 						if (lightObject)
 						{
-							lightObject->setIntensity(std::stof(token));
+							lightObject->intensity = std::stof(token);
 						}
 					}
 					break;
@@ -112,7 +117,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 							if (sphereObject)
 							{
-								sphereObject->setSize(std::stof(token));
+								//sphereObject->setSize(std::stof(token));
+								sphereObject->size = std::stof(token);
 							}
 						}
 						break;
@@ -133,7 +139,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						if (cameraObject)
 						{
-							cameraObject->set_lookAt(x, y, z);
+							cameraObject->lookAt = Vector3D<float>(x, y, z);
 						}
 					}
 					break;
@@ -146,7 +152,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 	}
 }
 
-bool SceneBuilder(std::string filePath, std::vector<SceneObject*>& sceneObjects)
+// Builds the scene by reading the specified file and creating scene objects based on the tokens found in the file. The created objects are stored in the 'sceneObjects' vector.
+bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneObjects)
 {
 
 	std::ifstream file(filePath);

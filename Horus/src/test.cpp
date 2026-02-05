@@ -16,7 +16,7 @@ const char* SceneObjectTypeToString(SceneObjectType type)
 }
 
 // Testing routine entry point
-int Testing(int& argc, char* argv[])
+int32_t Testing(int& argc, char* argv[])
 {
 	if (argc != 1 && std::string(argv[1]) == "--test")
 	{
@@ -44,7 +44,7 @@ int Testing(int& argc, char* argv[])
 		TestSelection testName = StringToTestSelection(testNameS);
 
 		std::vector<std::string> testArgs;
-		for (int i = 3; i < argc; ++i)
+		for (int32_t i = 3; i < argc; ++i)
 		{
 			testArgs.push_back(std::string(argv[i]));
 		}
@@ -57,7 +57,7 @@ int Testing(int& argc, char* argv[])
 }
 
 // Convert string to TestSelection enum
-TestSelection StringToTestSelection(const std::string& testName)
+TestSelection StringToTestSelection(std::string_view testName)
 {
 	if (testName == "MAIN_LINE_ARGS") return TestSelection::MAIN_LINE_ARGS;
 	if (testName == "SCENE_BUILDER") return TestSelection::SCENE_BUILDER;
@@ -66,7 +66,7 @@ TestSelection StringToTestSelection(const std::string& testName)
 }
 
 // Test: GetMainLineArgs
-void T_MAIN_LINE_ARGS(std::vector<std::string> args)
+void T_MAIN_LINE_ARGS(const std::vector<std::string>& args)
 {
 	std::cout << "Testing GetMainLineArgs(argv)" << std::endl;
 
@@ -80,7 +80,7 @@ void T_MAIN_LINE_ARGS(std::vector<std::string> args)
 	char** argv = new char* [args.size() + 2];
 	argv[0] = const_cast<char*>("program_name");  // argv[0] is program name
 
-	for (int i = 0; i < args.size(); ++i)
+	for (size_t i = 0; i < args.size(); ++i)
 	{
 		argv[i + 1] = const_cast<char*>(args[i].c_str());
 	}
@@ -93,7 +93,7 @@ void T_MAIN_LINE_ARGS(std::vector<std::string> args)
 	std::cout << "Input has " << args.size() << " arguments" << std::endl;
 	std::cout << "GetMainLineArgs returned " << result.size() << " elements:" << std::endl;
 
-	for (int i = 0; i < result.size(); ++i)
+	for (size_t i = 0; i < result.size(); ++i)
 	{
 		std::cout << "  result[" << i << "] = " << result[i] << std::endl;
 	}
@@ -112,7 +112,8 @@ void T_MAIN_LINE_ARGS(std::vector<std::string> args)
 	delete[] argv;
 }
 
-void T_SCENE_BUILDER(std::vector<std::string> args)
+// Test: SceneBuilder
+void T_SCENE_BUILDER(const std::vector<std::string>& args)
 {
 	std::cout << "Scene Builder Test Running" << std::endl;
 
@@ -132,7 +133,7 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 			std::cout << "SceneBuilder successfully parsed the scene file." << std::endl;
 			std::cout << "Number of scene objects created: " << sceneObjects.size() << std::endl;
 
-			for (int i = 0; i < sceneObjects.size(); ++i)
+			for (size_t i = 0; i < sceneObjects.size(); ++i)
 			{
 				std::cout << "Scene Object[" << i << "]:" << std::endl;
 				sceneObjects[i]->printProperties();
@@ -147,7 +148,7 @@ void T_SCENE_BUILDER(std::vector<std::string> args)
 }	
 
 // Run specified tests
-void RunTests(TestSelection Test, std::vector<std::string> args)
+void RunTests(TestSelection Test, const std::vector<std::string>& args)
 {
 	std::cout << "Running Tests: " << std::endl;
 

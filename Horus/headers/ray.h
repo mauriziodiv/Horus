@@ -4,7 +4,7 @@
 class Ray
 {
 	public:
-		Ray(Vector3D<float>, Vector3D<float>);
+		Ray(Vector3D<float> origin, Vector3D<float> direction);
 		Vector3D<float> getPointat(float t);
 
 		void setOrigin(const Vector3D<float>& o)
@@ -47,7 +47,6 @@ class Ray
 			return tMax;
 		}
 
-	private:
 		Vector3D<float> origin;
 		Vector3D<float> direction;
 

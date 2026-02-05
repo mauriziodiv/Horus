@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <string_view>
 #include "vec_math.h"
 #include "ray.h"
 
@@ -46,29 +47,30 @@ class SceneObject {
 			return type;
 		}
 
-		void setPosition(float x, float y, float z)
-		{
-			position = Vector3D<float>(x, y, z);
-		}
+		//void setPosition(float x, float y, float z)
+		//{
+		//	position = Vector3D<float>(x, y, z);
+		//}
 
-		Vector3D<float> getPosition()
-		{
-			return position;
-		}
+		//Vector3D<float> getPosition()
+		//{
+		//	return position;
+		//}
 
 		virtual void printProperties()
 		{
-			std::cout << "position: " << getPosition().getX() << " " << getPosition().getY() << " " << getPosition().getZ() << std::endl;
+			std::cout << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
 		}
 
-		virtual void setIntensity(float i) {};
 		virtual float getIntensity() { return 0.0f; };
 		
-		virtual std::string getObjectName() = 0;
+		virtual std::string_view getObjectName() = 0;
+
+		Vector3D<float> position;
 
 	private:
 		SceneObjectType type;
-		Vector3D<float> position;
+		
 
 };
 
@@ -86,15 +88,15 @@ class GeometryObject : public SceneObject {
 			return geometryType;
 		}
 
-		virtual void setSize (float s)
-		{
-			size = s;
-		}
+		//virtual void setSize (float s)
+		//{
+		//	size = s;
+		//}
 
-		virtual float getSize ()
-		{
-			return size;
-		}
+		//virtual float getSize ()
+		//{
+		//	return size;
+		//}
 
 		virtual void printProperties() override
 		{
@@ -104,46 +106,48 @@ class GeometryObject : public SceneObject {
 
 		virtual float rayIntersection(Ray& ray, float tMin, float tMax, float t) { return -1.0f; };
 
+		float size;
+
 	private:
 		GeometryType geometryType;
-		float size;
+		
 };
 
 class SphereObject : public GeometryObject {
 	public:
-		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE), radius(r) { GeometryObject::setSize(r); }
+		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE) { GeometryObject::size = r; }
 		
-		std::string getObjectName() override
+		std::string_view getObjectName() override
 		{
 			return name;
 		}
 
-		void setSize(float r) override
-		{
-			GeometryObject::setSize(r);
-			radius = r;
-		}
+		//void setSize(float r) override
+		//{
+		//	GeometryObject::setSize(r);
+		//	radius = r;
+		//}
 
-		float getSize() override
-		{
-			return radius;
-		}
+		//float getSize() override
+		//{
+		//	return radius;
+		//}
 
 		virtual void printProperties() override
 		{
 			GeometryObject::printProperties();
 			std::cout << "Type: " << getObjectName() << std::endl;
-			std::cout << "radius: " << radius << std::endl;
+			std::cout << "radius: " << size << std::endl;
 		}
 
 		float rayIntersection(Ray& ray, float tMin, float tMax, float t) override
 		{
-			float a = ray.getDirection() * ray.getDirection();
+			float a = ray.direction * ray.direction;
 
-			Vector3D<float> oc = ray.getOrigin() - getPosition();
-			float b = ((ray.getDirection()) * oc) * 2.0f;
+			Vector3D<float> oc = ray.origin - position;
+			float b = ((ray.direction) * oc) * 2.0f;
 
-			float c = (oc * oc) - (radius * radius);
+			float c = (oc * oc) - (size * size);
 
 			float discriminant = (b * b) - (4 * a * c);
 
@@ -170,9 +174,10 @@ class SphereObject : public GeometryObject {
 			return -1.0f;
 		}
 
+		//float radius;
+
 	private:
-		std::string name = "Sphere";
-		float radius;
+		static constexpr const char name[] = "Sphere";
 };
 
 // LIGHT ################################################
@@ -197,12 +202,12 @@ class LightObject : public SceneObject {
 			return size;
 		}
 
-		void setIntensity(float i) override
+		void setIntensity(float i)
 		{
 			intensity = i;
 		}
 
-		float getIntensity() override
+		float getIntensity()
 		{
 			return intensity;
 		}
@@ -214,17 +219,19 @@ class LightObject : public SceneObject {
 			std::cout << "intensity: " << intensity << std::endl;
 		}
 
-	private:
-		LightType lightType;
 		float size;
 		float intensity;
+
+	private:
+		LightType lightType;
+		
 };
 
 class PointLightObject : public LightObject {
 	public:
 		PointLightObject(float i) : LightObject(LightType::POINT) { LightObject::setSize(1.0f); }
 
-		std::string getObjectName() override
+		std::string_view getObjectName() override
 		{
 			return name;
 		}
@@ -236,7 +243,7 @@ class PointLightObject : public LightObject {
 		}
 
 	private:
-		std::string name = "Point Light";
+		static constexpr const char name[] = "Point Light";
 };
 
 // CAMERA ###############################################
@@ -264,19 +271,20 @@ class CameraObject : public SceneObject {
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
-			std::cout << "look at: " << get_lookAt().getX() << " " << get_lookAt().getY() << " " << get_lookAt().getZ() << std::endl;
+			std::cout << "look at: " << get_lookAt().x << " " << get_lookAt().y << " " << get_lookAt().z << std::endl;
 		}
+
+		Vector3D<float> lookAt;
 		
 	private:
 		CameraType cameraType;
-		Vector3D<float> lookAt;
 };
 
 class PerspectiveCameraObject : public CameraObject {
 	public:
 		PerspectiveCameraObject(float fov) : CameraObject(CameraType::PERSPECTIVE), fieldOfView(fov) {}
 
-		std::string getObjectName() override
+		std::string_view getObjectName() override
 		{
 			return name;
 		}
@@ -288,11 +296,11 @@ class PerspectiveCameraObject : public CameraObject {
 		}
 
 	private:
-		std::string name = "Camera Perspective";
+		static constexpr const char name[] = "Camera Perspective";
 		float fieldOfView;
 };
 
-bool SceneBuilder(std::string, std::vector<SceneObject*>&);
+bool SceneBuilder(const std::string&, std::vector<SceneObject*>&);
 
 void tokenSearch(std::ifstream& file, char c, std::string& token);
-void setObjectParameters(std::ifstream&, std::string&, std::vector<SceneObject*>&);
+void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects);

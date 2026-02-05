@@ -9,7 +9,8 @@ Scene::Scene() : sceneObjects(), camera(nullptr), geometries(), lights()
 
 }
 
-bool Scene::getScene(std::vector<SceneObject*> scene)
+// Initializes the scene by checking for the presence of a camera, geometries, and lights. Returns true if the scene is valid, false otherwise.
+bool Scene::getScene(const std::vector<SceneObject*>& scene)
 {
 	if (scene.empty())
 	{
@@ -29,6 +30,7 @@ bool Scene::getScene(std::vector<SceneObject*> scene)
 	return true;
 }
 
+// Checks for the presence of a camera.
 bool Scene::cameraCheck()
 {
 	for (SceneObject* obj : sceneObjects)
@@ -49,6 +51,7 @@ bool Scene::cameraCheck()
 	return true;
 }
 
+// Checks for the presence of geometries and populates the geometries vector.
 bool Scene::geometriesCheck()
 {
 	geometries.clear();
@@ -69,6 +72,7 @@ bool Scene::geometriesCheck()
 	return true;
 }
 
+// Checks for the presence of lights and populates the lights vector.
 bool Scene::lightCheck()
 {
 	lights.clear();
@@ -89,11 +93,13 @@ bool Scene::lightCheck()
 	return true;
 }
 
-void Scene::setRenderOutput(std::string ro)
+// Sets the render output format based on the provided string key.
+void Scene::setRenderOutput(const std::string& ro)
 {
 	renderOutput = renderOutputMap[ro];
 }
 
+// Renders the scene.
 void Scene::render()
 {
 

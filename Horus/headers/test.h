@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <string_view>
 
 enum class TestSelection {
 	DEFAULT,
@@ -8,8 +9,8 @@ enum class TestSelection {
 	SCENE_BUILDER
 };
 
-int Testing(int& argc, char* argv[]);
+int32_t Testing(int& argc, char* argv[]);
 
-TestSelection StringToTestSelection(const std::string&);
+TestSelection StringToTestSelection(std::string_view testName);
 
-void RunTests(TestSelection Test, std::vector<std::string> args = {});
+void RunTests(TestSelection Test, const std::vector<std::string>& args = {});

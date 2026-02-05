@@ -9,14 +9,14 @@ class Camera
 		Camera();
 		Camera(Vector3D<float>);
 
-		void setPosition(Vector3D<float>);
+		void setPosition(Vector3D<float> p);
 		Vector3D<float> getPosition();
 
-		void setWindow(float, float);
+		void setWindow(float w, float h);
 		float getWidth();
 		float getHeight();
 
-		Ray genRay(float, float);
+		Ray genRay(float u, float v);
 
 	private:
 		Vector3D<float> position;
