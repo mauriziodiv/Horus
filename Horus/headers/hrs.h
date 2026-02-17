@@ -6,6 +6,15 @@
 #include <string_view>
 #include "vec_math.h"
 #include "ray.h"
+#include "camera.h"
+
+struct HitRecord
+{
+	bool front = false;
+
+	Vector3D<float> hitPoint;
+	float t = 0.0f;
+};
 
 enum class ParameterType {
 	POSITION,
@@ -104,9 +113,13 @@ class GeometryObject : public SceneObject {
 			//std::cout << "size: " << size << std::endl;
 		}
 
-		virtual float rayIntersection(Ray& ray, float tMin, float tMax, float t) { return -1.0f; };
+		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) { return false; };
+
+		bool getHitRecordFront() { return hitRecord.front; }
+		bool getHitRecordBack() { return hitRecord.front; }
 
 		float size;
+		HitRecord hitRecord;
 
 	private:
 		GeometryType geometryType;
@@ -140,11 +153,16 @@ class SphereObject : public GeometryObject {
 			std::cout << "radius: " << size << std::endl;
 		}
 
-		float rayIntersection(Ray& ray, float tMin, float tMax, float t) override
+		//bool getHitRecordFront() { return hitRecord.front; }
+		//bool getHitRecordBack() { return hitRecord.front; }
+
+		// Implements ray-sphere intersection using the quadratic formula.
+		bool rayIntersection(Ray& ray, float tMin, float tMax) override
 		{
 			float a = ray.direction * ray.direction;
 
 			Vector3D<float> oc = ray.origin - position;
+
 			float b = ((ray.direction) * oc) * 2.0f;
 
 			float c = (oc * oc) - (size * size);
@@ -153,7 +171,7 @@ class SphereObject : public GeometryObject {
 
 			if (discriminant < 0)
 			{
-				return -1.0f;
+				return false;
 			}
 
 			float sqr = std::sqrt(discriminant);
@@ -163,21 +181,29 @@ class SphereObject : public GeometryObject {
 
 			if (t1 > tMin && t1 < tMax)
 			{
-				return t1;
+				hitRecord.front = true;
+				hitRecord.hitPoint = ray.getPointat(t1);
+				hitRecord.t = t1;
+				return true;
 			}
 
 			if (t2 > tMin && t2 < tMax)
 			{
-				return t2;
+				hitRecord.front = false;
+				hitRecord.hitPoint = ray.getPointat(t2);
+				hitRecord.t = t2;
+
+				return true;
 			}
 		
-			return -1.0f;
+			return false;
 		}
 
 		//float radius;
 
 	private:
 		static constexpr const char name[] = "Sphere";
+		//HitRecord hitRecord;
 };
 
 // LIGHT ################################################
@@ -251,7 +277,10 @@ class PointLightObject : public LightObject {
 // Derived classes for specific scene objects
 class CameraObject : public SceneObject {
 	public:
-		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float> (0.0f, 0.0f, 0.0f)) {}
+		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float> (0.0f, 0.0f, 0.0f)) 
+		{
+			//camera.setPosition(position);
+		}
 
 		CameraType getCameraType()
 		{
@@ -274,10 +303,33 @@ class CameraObject : public SceneObject {
 			std::cout << "look at: " << get_lookAt().x << " " << get_lookAt().y << " " << get_lookAt().z << std::endl;
 		}
 
+		void setPosition(float x, float y, float z)
+		{
+			//position = Vector3D<float>(x, y, z);
+			camera.setPosition(position);
+		}
+
+		Vector3D<float> getPosition()
+		{
+			return camera.getPosition();
+		}
+
+		void setWindow(float width, float height) 
+		{ 
+			//camera.setPosition(position);
+			camera.setWindow(width,  height); 
+		}
+
+		float getWidth() { return camera.getWidth(); }
+		float getHeight() { return camera.getHeight(); }
+
+		Ray genRay(float u, float v) { return camera.genRay(u, v); }
+
 		Vector3D<float> lookAt;
 		
 	private:
 		CameraType cameraType;
+		Camera camera;
 };
 
 class PerspectiveCameraObject : public CameraObject {

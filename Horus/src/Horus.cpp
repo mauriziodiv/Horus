@@ -61,7 +61,9 @@ int main(int argc, char* argv[])
 	Scene scene;
 
 	// Set render output type
-	scene.setRenderOutput(inputDescription[1]);
+	if (!scene.setRenderOutput(inputDescription[1])) { return 1; }
+
+	if (!scene.setFilePathWrite(inputDescription[2])) { return 1; }
 
 	// Get scene from scene objects
 	if (!scene.getScene(sceneObjects)) { return 1; }

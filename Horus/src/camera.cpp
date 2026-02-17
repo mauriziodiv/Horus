@@ -1,6 +1,6 @@
 #include "camera.h"
 
-Camera::Camera() : position(0.0f, 0.0f, -1.0f), width(200.0f), height(100.0f), aspect_ratio(2.0f), window_height(2.0f), window_width(4.0f), focal_length(1.0f), lower_left_corner(-2.0f, -1.0f, -2.0f), horizontal(4.0f, 0.0f, 0.0f), vertical(0.0f, 2.0f, 0.0f)
+Camera::Camera() : position(0.0f, 0.0f, 0.0f), width(200.0f), height(100.0f), aspect_ratio(2.0f), window_height(2.0f), window_width(4.0f), focal_length(1.0f), lower_left_corner(-2.0f, -1.0f, -2.0f), horizontal(4.0f, 0.0f, 0.0f), vertical(0.0f, 2.0f, 0.0f)
 {
 
 }

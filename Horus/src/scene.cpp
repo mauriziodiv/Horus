@@ -1,10 +1,10 @@
 #include "scene.h"
 
-std::unordered_map<std::string, RenderOutput> renderOutputMap = {
+std::unordered_map<std::string_view, RenderOutput> renderOutputMap = {
 	{ "ppm", RenderOutput::PPM }
 };
 
-Scene::Scene() : sceneObjects(), camera(nullptr), geometries(), lights()
+Scene::Scene() : sceneObjects(), camera(nullptr), geometries(), lights(), renderOutput(RenderOutput::PPM), output(), filePathWrite()
 {
 
 }
@@ -38,6 +38,8 @@ bool Scene::cameraCheck()
 		if (obj->getType() == SceneObjectType::CAMERA)
 		{
 			camera = static_cast<CameraObject*>(obj);
+			camera->setPosition(camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
+			camera->setWindow(camera->getWidth(), camera->getHeight());
 			break;
 		}
 	}
@@ -94,13 +96,82 @@ bool Scene::lightCheck()
 }
 
 // Sets the render output format based on the provided string key.
-void Scene::setRenderOutput(const std::string& ro)
+bool Scene::setRenderOutput(const std::string_view& ro)
 {
-	renderOutput = renderOutputMap[ro];
+	std::string_view par = (ro.front() == '-') ? ro.substr(1) : ro;
+
+	if (renderOutputMap.find(par) == renderOutputMap.end())
+	{
+		std::cout << "Invalid render output format!" << std::endl;
+		return false;
+	}
+
+	renderOutput = renderOutputMap[par];
+
+	return true;
+}
+
+// Sets the file path for writing the rendered output.
+bool Scene::setFilePathWrite(const std::string_view& path)
+{
+	std::string_view par = (path.front() == '-') ? path.substr(1) : path;
+
+	if (par.empty())
+	{
+		std::cout << "Invalid file path for writing!" << std::endl;
+		return false;
+	}
+
+	filePathWrite = par;
+
+	return true;
 }
 
 // Renders the scene.
 void Scene::render()
 {
+	output.setRenderOutput(getRenderOutput());
+	output.setFilePathWrite(getFilePathWrite());
+	output.setWidth(getCamera()->getWidth());
+	output.setHeight(getCamera()->getHeight());
 
+	//camera->setPosition(getCamera()->getPosition());
+	//camera->setWindow(getCamera()->getWidth(), getCamera()->getHeight());
+	//std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
+
+	std::cout << camera->getWidth() << " " << camera->getHeight() << std::endl;
+
+	float width = camera->getWidth();
+	float height = camera->getHeight();
+
+	for (int i = height - 1; i >= 0; --i)
+	{
+		for (int j = 0; j < width; ++j)
+		{
+			float u = (float)j / (width - 1);
+			float v = (float)i / (height - 1);
+
+			bool hit = false;
+
+			Ray ray(camera->genRay(u, v));
+
+			for (GeometryObject* geometry : geometries)
+			{
+				//std::cout << "HIT at u=" << u << " v=" << v << std::endl;
+				if (geometry->getGeometryType() == GeometryType::SPHERE)
+				{
+					if (geometry->rayIntersection(ray, ray.getTMin(), ray.getTMax()))
+					{
+						output.writeBuffer(Vector3D(1.0f, 0.0f, 0.0f));
+						hit =true;
+					}
+				}
+			}
+			if (!hit)
+			{
+				output.writeBuffer(Vector3D(0.0f, 0.0f, 0.0f));
+			}
+		}
+	}
+	output.write();
 }

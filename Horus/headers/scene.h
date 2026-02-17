@@ -1,9 +1,6 @@
 #pragma once
 #include "hrs.h"
-
-enum class RenderOutput {
-	PPM
-};
+#include "output.h"
 
 class Scene {
 
@@ -12,11 +9,14 @@ class Scene {
 		bool getScene(const std::vector<SceneObject*>& scene);
 
 		CameraObject* getCamera() { return camera; }
+		//Vector3D<float> getCameraPosition() { return camera->getPosition(); }
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
 		std::vector<LightObject*> getLights() { return lights; }
-		void setRenderOutput(const std::string& ro);
+		bool setRenderOutput(const std::string_view& ro);
 		RenderOutput getRenderOutput() { return renderOutput; }
 		void render();
+		bool setFilePathWrite(const std::string_view& path);
+		const std::string_view& getFilePathWrite() { return filePathWrite; }
 
 	private:
 		std::vector<SceneObject*> sceneObjects;
@@ -29,4 +29,6 @@ class Scene {
 		bool lightCheck();
 
 		RenderOutput renderOutput = RenderOutput::PPM;
+		Output output;
+		std::string_view filePathWrite;
 };
