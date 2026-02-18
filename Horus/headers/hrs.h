@@ -20,7 +20,8 @@ enum class ParameterType {
 	SIZE,
 	RADIUS,
 	INTENSITY,
-	LAT
+	LAT,
+	WINDOW
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -55,16 +56,6 @@ class SceneObject {
 			return type;
 		}
 
-		//void setPosition(float x, float y, float z)
-		//{
-		//	position = Vector3D<float>(x, y, z);
-		//}
-
-		//Vector3D<float> getPosition()
-		//{
-		//	return position;
-		//}
-
 		virtual void printProperties()
 		{
 			std::cout << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
@@ -96,16 +87,6 @@ class GeometryObject : public SceneObject {
 			return geometryType;
 		}
 
-		//virtual void setSize (float s)
-		//{
-		//	size = s;
-		//}
-
-		//virtual float getSize ()
-		//{
-		//	return size;
-		//}
-
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
@@ -134,26 +115,12 @@ class SphereObject : public GeometryObject {
 			return name;
 		}
 
-		//void setSize(float r) override
-		//{
-		//	GeometryObject::setSize(r);
-		//	radius = r;
-		//}
-
-		//float getSize() override
-		//{
-		//	return radius;
-		//}
-
 		virtual void printProperties() override
 		{
 			GeometryObject::printProperties();
 			std::cout << "Type: " << getObjectName() << std::endl;
 			std::cout << "radius: " << size << std::endl;
 		}
-
-		//bool getHitRecordFront() { return hitRecord.front; }
-		//bool getHitRecordBack() { return hitRecord.front; }
 
 		// Implements ray-sphere intersection using the quadratic formula.
 		bool rayIntersection(Ray& ray, float tMin, float tMax) override
@@ -304,8 +271,6 @@ class CameraObject : public SceneObject {
 
 		void setPosition(float x, float y, float z)
 		{
-			//position = Vector3D<float>(x, y, z);
-			//camera.setPosition(position);
 			position = Vector3D<float>(x, y, z);
 		}
 

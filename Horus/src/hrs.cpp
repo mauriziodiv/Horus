@@ -7,7 +7,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"size", ParameterType::SIZE},
 	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
-	{"lat", ParameterType::LAT}
+	{"lat", ParameterType::LAT},
+	{"window", ParameterType::WINDOW}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -79,7 +80,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
-						//sceneObjects.back()->setPosition(x, y, z);
 						sceneObjects.back()->position = Vector3D<float>(x, y, z);
 					}
 					break;
@@ -94,7 +94,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						
 						if (geometryObject)
 						{
-							//geometryObject->setSize(std::stof(token));
 							geometryObject->size = std::stof(token);
 						}
 					}
@@ -125,7 +124,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 							if (sphereObject)
 							{
-								//sphereObject->setSize(std::stof(token));
 								sphereObject->size = std::stof(token);
 							}
 						}
@@ -148,6 +146,28 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						if (cameraObject)
 						{
 							cameraObject->lookAt = Vector3D<float>(x, y, z);
+						}
+					}
+					break;
+
+					case ParameterType::WINDOW:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back());
+
+						if (cameraObject)
+						{
+							std::stringstream s(token);
+
+							float width, height;
+							char comma;
+
+							s >> width >> comma >> height;
+
+							cameraObject->setWindow(width, height);
 						}
 					}
 					break;

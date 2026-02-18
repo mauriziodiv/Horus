@@ -9,7 +9,6 @@ class Scene {
 		bool getScene(const std::vector<SceneObject*>& scene);
 
 		CameraObject* getCamera() { return camera; }
-		//Vector3D<float> getCameraPosition() { return camera->getPosition(); }
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
 		std::vector<LightObject*> getLights() { return lights; }
 		bool setRenderOutput(const std::string_view& ro);
