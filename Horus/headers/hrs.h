@@ -17,6 +17,7 @@ struct HitRecord
 
 enum class ParameterType {
 	POSITION,
+	ROTATION,
 	SIZE,
 	RADIUS,
 	INTENSITY,
@@ -49,7 +50,7 @@ class SceneObject {
 
 	public:
 
-		SceneObject(SceneObjectType t) : type(t), position(0.0f, 0.0f, 0.0f) {}
+		SceneObject(SceneObjectType t) : type(t), position(0.0f, 0.0f, 0.0f), RIGHT(1.0f, 0.0f, 0.0f), UP(0.0f, 1.0f, 0.0f), FORWARD(0.0f, 0.0f, -1.0f) {}
 
 		SceneObjectType getType()
 		{
@@ -66,11 +67,14 @@ class SceneObject {
 		virtual std::string_view getObjectName() = 0;
 
 		Vector3D<float> position;
+		Vector3D<float> rotation;
 
 	private:
 		SceneObjectType type;
-		
 
+		Vector3D<float> RIGHT;
+		Vector3D<float> UP;
+		Vector3D<float> FORWARD;
 };
 
 // GEOMETRY ###############################################
@@ -281,7 +285,6 @@ class CameraObject : public SceneObject {
 
 		void setWindow(float w, float h) 
 		{ 
-			//camera.setWindow(width,  height);
 
 			width = w;
 			height = h;
@@ -290,9 +293,15 @@ class CameraObject : public SceneObject {
 			window_height = 2.0f;
 			window_width = window_height * aspect_ratio;
 
-			lower_left_corner = Vector3D<float>(position.x - (window_width * 0.5), position.y - (window_height * 0.5), position.z - focal_length);
-			horizontal = Vector3D<float>(window_width, 0.0f, 0.0f);
-			vertical = Vector3D<float>(0.0f, window_height, 0.0f);
+			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y) * Matrix4X4<float>::RotationX(rotation.x) * Matrix4X4<float>::RotationZ(rotation.z);
+
+			Vector3D<float> forward = R * Vector3D<float>(0.0f, 0.0f, -1.0f);
+			Vector3D<float> right = R * Vector3D<float>(1.0f, 0.0f, 0.0f);
+			Vector3D<float> up = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
+
+			lower_left_corner = position + (forward * focal_length) - (right * window_width * 0.5) - (up * window_height * 0.5);
+			horizontal = right * window_width;
+			vertical = up * window_height;
 		}
 
 		float getWidth() { return width; }
@@ -305,7 +314,6 @@ class CameraObject : public SceneObject {
 		
 	private:
 		CameraType cameraType;
-		//Camera camera;
 
 		float width;
 		float height;
@@ -315,8 +323,6 @@ class CameraObject : public SceneObject {
 		float window_width;
 
 		float focal_length;
-
-		//Vector3D<float> position;
 
 		Vector3D<float> lower_left_corner;
 		Vector3D<float> horizontal;

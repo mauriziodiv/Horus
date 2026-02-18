@@ -147,7 +147,7 @@ template <typename T> class Matrix4X4
 			m4x4[x][y] = value;
 		}
 
-		T getValue(int32_t x, int32_t y)
+		T getValue(int32_t x, int32_t y) const
 		{
 			return m4x4[x][y];
 		}

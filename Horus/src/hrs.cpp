@@ -4,6 +4,7 @@
 
 std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"pos", ParameterType::POSITION},
+	{"rot", ParameterType::ROTATION},
 	{"size", ParameterType::SIZE},
 	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
@@ -81,6 +82,22 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						s >> x >> comma >> y >> comma >> z;
 						sceneObjects.back()->position = Vector3D<float>(x, y, z);
+					}
+					break;
+
+					case ParameterType::ROTATION:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						std::stringstream s(token);
+
+						float x, y, z;
+						char comma;
+
+						s >> x >> comma >> y >> comma >> z;
+						sceneObjects.back()->rotation = Vector3D<float>(x, y, z);
 					}
 					break;
 
