@@ -36,9 +36,6 @@
     <ClCompile Include="src\ray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,9 +66,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\ray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\output.h">

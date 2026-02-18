@@ -6,7 +6,6 @@
 #include <string_view>
 #include "vec_math.h"
 #include "ray.h"
-#include "camera.h"
 
 struct HitRecord
 {
@@ -277,9 +276,9 @@ class PointLightObject : public LightObject {
 // Derived classes for specific scene objects
 class CameraObject : public SceneObject {
 	public:
-		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float> (0.0f, 0.0f, 0.0f)) 
+		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float>(0.0f, 0.0f, 0.0f)), focal_length(1.0f), width(200.0f), height(100.0f)
 		{
-			//camera.setPosition(position);
+			
 		}
 
 		CameraType getCameraType()
@@ -306,30 +305,57 @@ class CameraObject : public SceneObject {
 		void setPosition(float x, float y, float z)
 		{
 			//position = Vector3D<float>(x, y, z);
-			camera.setPosition(position);
+			//camera.setPosition(position);
+			position = Vector3D<float>(x, y, z);
 		}
 
 		Vector3D<float> getPosition()
 		{
-			return camera.getPosition();
+			return position;
 		}
 
-		void setWindow(float width, float height) 
+		void setWindow(float w, float h) 
 		{ 
-			//camera.setPosition(position);
-			camera.setWindow(width,  height); 
+			//camera.setWindow(width,  height);
+
+			width = w;
+			height = h;
+
+			aspect_ratio = width / height;
+			window_height = 2.0f;
+			window_width = window_height * aspect_ratio;
+
+			lower_left_corner = Vector3D<float>(position.x - (window_width * 0.5), position.y - (window_height * 0.5), position.z - focal_length);
+			horizontal = Vector3D<float>(window_width, 0.0f, 0.0f);
+			vertical = Vector3D<float>(0.0f, window_height, 0.0f);
 		}
 
-		float getWidth() { return camera.getWidth(); }
-		float getHeight() { return camera.getHeight(); }
+		float getWidth() { return width; }
+		float getHeight() { return height; }
 
-		Ray genRay(float u, float v) { return camera.genRay(u, v); }
+		Ray genRay(float u, float v); 
+		
 
 		Vector3D<float> lookAt;
 		
 	private:
 		CameraType cameraType;
-		Camera camera;
+		//Camera camera;
+
+		float width;
+		float height;
+
+		float aspect_ratio;
+		float window_height;
+		float window_width;
+
+		float focal_length;
+
+		//Vector3D<float> position;
+
+		Vector3D<float> lower_left_corner;
+		Vector3D<float> horizontal;
+		Vector3D<float> vertical;
 };
 
 class PerspectiveCameraObject : public CameraObject {

@@ -38,8 +38,9 @@ bool Scene::cameraCheck()
 		if (obj->getType() == SceneObjectType::CAMERA)
 		{
 			camera = static_cast<CameraObject*>(obj);
-			camera->setPosition(camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
-			camera->setWindow(camera->getWidth(), camera->getHeight());
+			//camera->setPosition(camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
+			//camera->setWindow(camera->getWidth(), camera->getHeight());
+			//std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
 			break;
 		}
 	}
@@ -135,9 +136,8 @@ void Scene::render()
 	output.setWidth(getCamera()->getWidth());
 	output.setHeight(getCamera()->getHeight());
 
-	//camera->setPosition(getCamera()->getPosition());
-	//camera->setWindow(getCamera()->getWidth(), getCamera()->getHeight());
-	//std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
+	camera->setWindow(camera->getWidth(), camera->getHeight());
+	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
 
 	std::cout << camera->getWidth() << " " << camera->getHeight() << std::endl;
 

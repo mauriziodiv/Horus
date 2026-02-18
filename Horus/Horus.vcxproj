@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\Horus.cpp" />
     <ClCompile Include="src\hrs.cpp" />
     <ClCompile Include="src\output.cpp" />
@@ -32,7 +31,6 @@
     <ClCompile Include="src\vec_math.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\camera.h" />
     <ClInclude Include="headers\Horus.h" />
     <ClInclude Include="headers\hrs.h" />
     <ClInclude Include="headers\output.h" />

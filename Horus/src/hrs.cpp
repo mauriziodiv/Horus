@@ -10,6 +10,14 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"lat", ParameterType::LAT}
 };
 
+Ray CameraObject::genRay(float u, float v)
+{
+	Vector3D<float> direction = lower_left_corner + (horizontal * u) + (vertical * v) - position;
+	direction.normalize();
+
+	return Ray(position, direction);
+}
+
 // Reads characters from the file until it finds the specified character 'c', storing the characters in the 'token' string.
 void charSearch(std::ifstream& file, char c, std::string& token)
 {
