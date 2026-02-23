@@ -26,6 +26,7 @@
     <ClCompile Include="src\render.cpp" />
     <ClCompile Include="src\sampler.cpp" />
     <ClCompile Include="src\scene.cpp" />
+    <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\vec_math.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="headers\render.h" />
     <ClInclude Include="headers\sampler.h" />
     <ClInclude Include="headers\scene.h" />
+    <ClInclude Include="headers\shader.h" />
     <ClInclude Include="headers\test.h" />
     <ClInclude Include="headers\util.h" />
     <ClInclude Include="headers\vec_math.h" />

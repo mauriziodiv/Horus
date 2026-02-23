@@ -151,23 +151,30 @@ void Scene::render()
 			float u = (float)j / (width - 1);
 			float v = (float)i / (height - 1);
 
-			bool hit = false;
+			GeometryObject* closestHit = nullptr;
 
 			Ray ray(camera->genRay(u, v));
 
+			float closestT = ray.getTMax();
+
 			for (GeometryObject* geometry : geometries)
 			{
-				//std::cout << "HIT at u=" << u << " v=" << v << std::endl;
 				if (geometry->getGeometryType() == GeometryType::SPHERE)
 				{
-					if (geometry->rayIntersection(ray, ray.getTMin(), ray.getTMax()))
+					if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
 					{
-						output.writeBuffer(Vector3D(1.0f, 0.0f, 0.0f));
-						hit =true;
+						closestT = geometry->hitRecord.t;
+						closestHit = geometry;
 					}
 				}
 			}
-			if (!hit)
+
+			if (closestHit)
+			{
+				output.writeBuffer(std::visit([](auto& p) { return p.getColor(); }, closestHit->getShader()));
+				
+			}
+			else
 			{
 				output.writeBuffer(Vector3D(0.0f, 0.0f, 0.0f));
 			}

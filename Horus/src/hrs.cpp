@@ -9,7 +9,16 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
 	{"lat", ParameterType::LAT},
-	{"window", ParameterType::WINDOW}
+	{"window", ParameterType::WINDOW},
+	{"shader", ParameterType::SHADER}
+};
+
+std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
+	{"constant", ShaderType::CONSTANT}
+};
+
+std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
+	{"color", ShaderParameterType::COLOR}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -167,7 +176,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 					}
 					break;
 
-					case ParameterType::WINDOW:
+				case ParameterType::WINDOW:
 
 					tokenSearch(file, '/', token);
 
@@ -185,6 +194,21 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 							s >> width >> comma >> height;
 
 							cameraObject->setWindow(width, height);
+						}
+					}
+					break;
+
+				case ParameterType::SHADER:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+
+						if (geometryObject)
+						{
+							geometryObject->linkShader(token);
 						}
 					}
 					break;
@@ -286,4 +310,109 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 	}
 
 	return true;
+}
+
+// Links a shader to the geometry object by reading the shader file specified by 'shaderFilePath' and parsing its contents to set the shader properties.
+bool GeometryObject::linkShader(std::string& shaderFilePath)
+{
+	shaderFile.open(shaderFilePath);
+
+	if (!shaderFile.is_open())
+	{
+		std::cout << "Failed to open shader file: " << shaderFilePath << std::endl;
+		return false;
+	}
+
+	parse();
+
+	return true;
+}
+
+// Assigns a shader to the geometry object based on the specified shader type. Returns true if the shader was successfully assigned, false otherwise.
+bool GeometryObject::assignShader(ShaderType sType)
+{
+	switch(sType)
+	{
+		case ShaderType::CONSTANT:
+			shader = Constant();
+			return true;
+
+		default:
+			break;
+	}
+	return false;
+}
+
+// Parses the shader file to extract shader properties and assign them to the geometry object. Returns true if parsing was successful, false otherwise.
+bool GeometryObject::parse()
+{
+	token.clear();
+
+	while (!shaderFile.eof() || shaderFile.peek() != ';')
+	{
+		if (shaderFile.peek() == '(')
+		{
+			charSearch(shaderFile, ')', token);
+
+			if (shaderTypeMap.find(token) != shaderTypeMap.end())
+			{
+				ShaderType sType = shaderTypeMap[token];
+
+				switch (sType)
+				{
+					case ShaderType::CONSTANT:
+						if (assignShader(sType))
+						{
+							token.clear(); 
+
+							tokenSearch(shaderFile, '-', token);
+
+							ShaderParameterType spType;
+
+							if (shaderParameterMap.find(token) != shaderParameterMap.end())
+							{
+								spType = shaderParameterMap[token];
+								
+								switch (spType)
+								{
+									case ShaderParameterType::COLOR:
+
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Constant>(&getShader()))
+											{
+												// repeated code
+												std::stringstream s(token);
+
+												float x, y, z;
+												char comma;
+
+												s >> x >> comma >> y >> comma >> z;
+
+												p->setColor(Vector3D<float>(x, y, z));
+											}
+										}
+
+										break;
+
+									default:
+										return false;
+								}
+
+								
+							}
+						}
+						return false;
+
+					default:
+						return false;
+				}
+			}
+		}
+	}
+	return false;
 }

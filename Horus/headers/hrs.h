@@ -4,12 +4,23 @@
 #include <iostream>
 #include <unordered_map>
 #include <string_view>
+#include <variant>
 #include "vec_math.h"
 #include "ray.h"
+#include "shader.h"
+
+enum class ShaderType {
+	CONSTANT
+};
+
+enum class ShaderParameterType {
+	COLOR
+};
 
 struct HitRecord
 {
 	bool front = false;
+	bool back = false;
 
 	Vector3D<float> hitPoint;
 	float t = 0.0f;
@@ -22,7 +33,8 @@ enum class ParameterType {
 	RADIUS,
 	INTENSITY,
 	LAT,
-	WINDOW
+	WINDOW,
+	SHADER
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -94,20 +106,31 @@ class GeometryObject : public SceneObject {
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
-			//std::cout << "size: " << size << std::endl;
 		}
 
 		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) { return false; };
 
+		bool linkShader(std::string& shaderFilePath);
+
+		std::variant<Shader, Constant>& getShader() { return shader; }
+
 		bool getHitRecordFront() { return hitRecord.front; }
-		bool getHitRecordBack() { return hitRecord.front; }
+		bool getHitRecordBack() { return hitRecord.back; }
 
 		float size;
 		HitRecord hitRecord;
 
 	private:
 		GeometryType geometryType;
-		
+		std::ifstream shaderFile;
+
+		std::string token;
+
+		std::variant<Shader, Constant> shader;
+
+		bool parse();
+
+		bool assignShader(ShaderType sType);
 };
 
 class SphereObject : public GeometryObject {
@@ -169,11 +192,8 @@ class SphereObject : public GeometryObject {
 			return false;
 		}
 
-		//float radius;
-
 	private:
 		static constexpr const char name[] = "Sphere";
-		//HitRecord hitRecord;
 };
 
 // LIGHT ################################################
@@ -285,7 +305,6 @@ class CameraObject : public SceneObject {
 
 		void setWindow(float w, float h) 
 		{ 
-
 			width = w;
 			height = h;
 
@@ -352,4 +371,5 @@ class PerspectiveCameraObject : public CameraObject {
 bool SceneBuilder(const std::string&, std::vector<SceneObject*>&);
 
 void tokenSearch(std::ifstream& file, char c, std::string& token);
+void charSearch(std::ifstream& file, char c, std::string& token);
 void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects);
