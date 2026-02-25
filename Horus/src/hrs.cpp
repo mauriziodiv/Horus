@@ -130,6 +130,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
+
 						sceneObjects.back()->rotation = Vector3D<float>(x, y, z);
 						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); }
 
