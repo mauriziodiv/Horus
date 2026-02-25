@@ -67,6 +67,15 @@ void tokenSearch(std::ifstream& file, char c, std::string& token)
 		}
 }
 
+// Checks if the position, rotation, width, and height parameters of a plane object have been updated, and if so, computes the normal vector for the plane.
+void computePlaneNormalCheck(GeometryObject& geometryObject)
+{
+	if (geometryObject.checkPositionRotationWidthHeightUpdated() && geometryObject.getGeometryType() != GeometryType::SPHERE)
+	{
+		geometryObject.computeNormal();
+	}
+}
+
 // Sets the parameters of the last created scene object based on the tokens read from the file.
 void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects)
 {
@@ -98,10 +107,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						{ 
 							static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); 
 
-							if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
-							{
-								static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
-							}
+							
+							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back()));
 						}
 
 						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
@@ -130,10 +137,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						{
 							static_cast<GeometryObject*>(sceneObjects.back())->setRotationUpdated(true);
 
-							if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
-							{
-								static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
-							}
+							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back()));
 						}
 					}
 					break;
