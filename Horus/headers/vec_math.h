@@ -2,6 +2,9 @@
 #include <cmath>
 #include <cstdint>
 
+constexpr float PI = 3.14159265358979323846f;
+constexpr float DegreeToRadians = PI / 180.0f;
+
 template <typename T> class Point
 {
 
@@ -120,6 +123,16 @@ public:
 		y /= v;
 		z /= v;
 		return *this;
+	}
+
+	bool operator>(const Vector3D<T>& v) const
+	{
+		return (x > v.x) && (y > v.y) && (z > v.z);
+	}
+
+	bool operator<(const Vector3D<T>& v) const
+	{
+		return (x < v.x) && (y < v.y) && (z < v.z);
 	}
 
 	T x;

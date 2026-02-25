@@ -159,14 +159,23 @@ void Scene::render()
 
 			for (GeometryObject* geometry : geometries)
 			{
-				if (geometry->getGeometryType() == GeometryType::SPHERE)
-				{
+				//if (geometry->getGeometryType() == GeometryType::SPHERE)
+				//{
 					if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
 					{
 						closestT = geometry->hitRecord.t;
 						closestHit = geometry;
 					}
-				}
+				//}
+
+				//if (geometry->getGeometryType() == GeometryType::PLANE)
+				//{
+				//	if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
+				//	{
+				//		closestT = geometry->hitRecord.t;
+				//		closestHit = geometry;
+				//	}
+				//}
 			}
 
 			if (closestHit)

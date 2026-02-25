@@ -6,6 +6,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"pos", ParameterType::POSITION},
 	{"rot", ParameterType::ROTATION},
 	{"size", ParameterType::SIZE},
+	{"width", ParameterType::WIDTH},
+	{"height", ParameterType::HEIGHT},
 	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
 	{"lat", ParameterType::LAT},
@@ -91,10 +93,25 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						s >> x >> comma >> y >> comma >> z;
 						sceneObjects.back()->position = Vector3D<float>(x, y, z);
+
+						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) 
+						{ 
+							static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); 
+
+							if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+							{
+								static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
+							}
+						}
+
+						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
+						{
+							static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
+						}
 					}
 					break;
 
-					case ParameterType::ROTATION:
+				case ParameterType::ROTATION:
 
 					tokenSearch(file, '/', token);
 
@@ -107,6 +124,17 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						s >> x >> comma >> y >> comma >> z;
 						sceneObjects.back()->rotation = Vector3D<float>(x, y, z);
+						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); }
+
+						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
+						{
+							static_cast<GeometryObject*>(sceneObjects.back())->setRotationUpdated(true);
+
+							if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+							{
+								static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
+							}
+						}
 					}
 					break;
 
@@ -121,6 +149,51 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						if (geometryObject)
 						{
 							geometryObject->size = std::stof(token);
+						}
+					}
+					break;
+
+				case ParameterType::WIDTH:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+
+						if (geometryObject && geometryObject->getGeometryType() == GeometryType::PLANE)
+						{
+							//geometryObject->size = std::stof(token);
+							PlaneObject* planeObject = dynamic_cast<PlaneObject*>(geometryObject);
+							planeObject->setWidth(std::stof(token));
+							planeObject->setWidthUpdated(true);
+						}
+
+						if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+						{
+							static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
+						}
+					}
+					break;
+
+				case ParameterType::HEIGHT:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+
+						if (geometryObject && geometryObject->getGeometryType() == GeometryType::PLANE)
+						{
+							PlaneObject* planeObject = dynamic_cast<PlaneObject*>(geometryObject);
+							planeObject->setHeight(std::stof(token));
+							planeObject->setHeightUpdated(true);
+						}
+
+						if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+						{
+							static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
 						}
 					}
 					break;
@@ -229,7 +302,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 
 	std::unordered_map<std::string, GeometryType> GeometryObjectsMap = 
 	{
-		{ "sphere", GeometryType::SPHERE }
+		{ "sphere", GeometryType::SPHERE },
+		{ "plane", GeometryType::PLANE }
 	};
 
 	std::unordered_map<std::string, LightType> LightObjectsMap =
@@ -265,6 +339,12 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 					case GeometryType::SPHERE:
 						// Create a sphere object
 						sceneObjects.push_back(new SphereObject(1.0f));
+						setObjectParameters(file, token, sceneObjects);
+						break;
+
+					case GeometryType::PLANE:
+						// Create a plane object
+						sceneObjects.push_back(new PlaneObject());
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}
@@ -402,8 +482,6 @@ bool GeometryObject::parse()
 									default:
 										return false;
 								}
-
-								
 							}
 						}
 						return false;
@@ -415,4 +493,31 @@ bool GeometryObject::parse()
 		}
 	}
 	return false;
+}
+
+PlaneObject::PlaneObject() : GeometryObject(GeometryType::PLANE)
+{
+	width = 10.0f;
+	height = 10.0f;
+
+	min = Vector3D<float>(position.x - (width * 0.5), position.y - (height * 0.5), position.z - (height * 0.5));
+	max = Vector3D<float>(position.x + (width * 0.5), position.y + (height * 0.5), position.z + (height * 0.5));
+
+	normal = Vector3D<float>(0.0f, 1.0f, 0.0f);
+
+	position = Vector3D<float>(0.0f, 0.0f, 0.0f);
+
+	size = 1.0f;
+
+	rotation = Vector3D<float>(0.0f, 0.0f, 0.0f);
+}
+
+void PlaneObject::computeNormal()
+{
+	min = Vector3D<float>(position.x - (width * 0.5), position.y - (height * 0.5), position.z - (height * 0.5));
+	max = Vector3D<float>(position.x + (width * 0.5), position.y + (height * 0.5), position.z + (height * 0.5));
+
+	Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+
+	normal = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
 }

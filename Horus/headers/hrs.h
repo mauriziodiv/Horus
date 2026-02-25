@@ -9,6 +9,23 @@
 #include "ray.h"
 #include "shader.h"
 
+struct BoundingBox
+{
+	public:
+		BoundingBox() : min(0.0f, 0.0f, 0.0f), max(0.0f, 0.0f, 0.0f) {}
+		BoundingBox(const Vector3D<float>& mn, const Vector3D<float>& mx) : min(mn), max(mx) {}
+
+		void setMin(const Vector3D<float> mn) { min = mn; }
+		void setMax(const Vector3D<float> mx) { max = mx; }
+
+		Vector3D<float> getMin() const { return min; }
+		Vector3D<float> getMax() const { return max; }
+
+	private:
+		Vector3D<float> min;
+		Vector3D<float> max;
+};
+
 enum class ShaderType {
 	CONSTANT
 };
@@ -30,6 +47,8 @@ enum class ParameterType {
 	POSITION,
 	ROTATION,
 	SIZE,
+	WIDTH,
+	HEIGHT,
 	RADIUS,
 	INTENSITY,
 	LAT,
@@ -46,7 +65,8 @@ enum class SceneObjectType {
 };
 
 enum class GeometryType {
-	SPHERE
+	SPHERE,
+	PLANE
 };
 
 enum class LightType {
@@ -108,6 +128,24 @@ class GeometryObject : public SceneObject {
 			SceneObject::printProperties();
 		}
 
+		virtual void setBoundingBox() {}
+
+		virtual void computeNormal() {}
+
+		void setPositionUpdated(bool updated) { positionUpdated = updated; }
+		void setRotationUpdated(bool updated) { rotationUpdated = updated; }
+		void setWidthUpdated(bool updated) { widthUpdated = updated; }
+		void setHeightUpdated(bool updated) { heightUpdated = updated; }
+
+		bool getPositionUpdated() { return positionUpdated; }
+		bool getRotationUpdated() { return rotationUpdated; }
+		bool getWidthUpdated() { return widthUpdated; }
+		bool getHeightUpdated() { return heightUpdated; }
+
+		bool checkPositionRotationWidthHeightUpdated() { return positionUpdated && rotationUpdated && widthUpdated && heightUpdated; }
+
+		virtual Vector3D<float> getNormal() { return Vector3D<float>(0.0f, 0.0f, 0.0f); };
+
 		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) { return false; };
 
 		bool linkShader(std::string& shaderFilePath);
@@ -120,7 +158,10 @@ class GeometryObject : public SceneObject {
 		float size;
 		HitRecord hitRecord;
 
+		BoundingBox boundingBox;
+
 	private:
+
 		GeometryType geometryType;
 		std::ifstream shaderFile;
 
@@ -131,15 +172,30 @@ class GeometryObject : public SceneObject {
 		bool parse();
 
 		bool assignShader(ShaderType sType);
+
+		bool positionUpdated = false;
+		bool rotationUpdated = false;
+		bool widthUpdated = false;
+		bool heightUpdated = false;
 };
 
 class SphereObject : public GeometryObject {
+
 	public:
-		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE) { GeometryObject::size = r; }
+		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE) { GeometryObject::size = r; setBoundingBox(); }
 		
 		std::string_view getObjectName() override
 		{
 			return name;
+		}
+
+		virtual void setBoundingBox() override
+		{
+			Vector3D<float> mn = Vector3D<float>(position.x - size, position.y - size, position.z - size);
+			Vector3D<float> mx = Vector3D<float>(position.x + size, position.y + size, position.z + size);
+
+			boundingBox.setMin(mn);
+			boundingBox.setMax(mx);
 		}
 
 		virtual void printProperties() override
@@ -194,6 +250,68 @@ class SphereObject : public GeometryObject {
 
 	private:
 		static constexpr const char name[] = "Sphere";
+};
+
+class PlaneObject : public GeometryObject {
+
+	public:
+
+		PlaneObject();
+
+		std::string_view getObjectName() override
+		{
+			return name;
+		}
+
+		void setWidth(float w) { width = w; }
+		void setHeight(float h) { height = h; }
+
+		float getWidth() { return width; }
+		float getHeight() { return height; }
+
+		virtual void computeNormal() override;
+
+		virtual Vector3D<float> getNormal() override
+		{
+			return normal;
+		}
+
+		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) override
+		{
+			if (ray.direction * normal == 0.0f) { return false; }
+
+			float t = ((position - ray.getOrigin()) * normal) / (ray.getDirection() * normal);
+
+			if (t > 0 && t> tMin && t < tMax)
+			{
+				Vector3D<float> hitPoint = ray.getPointat(t);
+
+				if (hitPoint > min && hitPoint < max)
+				{
+					hitRecord.front = true;
+					hitRecord.back = false;
+					hitRecord.hitPoint = hitPoint;
+					hitRecord.t = t;
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+	private:
+
+		float width;
+		float height;
+
+		Vector3D<float> min;
+		Vector3D<float> max;
+
+		Vector3D<float> normal;
+
+		static constexpr const char name[] = "Plane";
+
 };
 
 // LIGHT ################################################
@@ -312,7 +430,7 @@ class CameraObject : public SceneObject {
 			window_height = 2.0f;
 			window_width = window_height * aspect_ratio;
 
-			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y) * Matrix4X4<float>::RotationX(rotation.x) * Matrix4X4<float>::RotationZ(rotation.z);
+			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
 
 			Vector3D<float> forward = R * Vector3D<float>(0.0f, 0.0f, -1.0f);
 			Vector3D<float> right = R * Vector3D<float>(1.0f, 0.0f, 0.0f);
