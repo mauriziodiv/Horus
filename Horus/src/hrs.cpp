@@ -23,6 +23,8 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"color", ShaderParameterType::COLOR}
 };
 
+uint32_t GeometryObject::nextID = 0;
+
 Ray CameraObject::genRay(float u, float v)
 {
 	Vector3D<float> direction = lower_left_corner + (horizontal * u) + (vertical * v) - position;
@@ -102,19 +104,23 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						s >> x >> comma >> y >> comma >> z;
 						sceneObjects.back()->position = Vector3D<float>(x, y, z);
+						//sceneObjects.back()->setI
 
 						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) 
 						{ 
 							static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); 
 
-							
 							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back()));
+
+							static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
+
+							static_cast<GeometryObject*>(sceneObjects.back())->createMorton();
 						}
 
-						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
-						{
-							static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
-						}
+						//if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
+						//{
+						//	static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
+						//}
 					}
 					break;
 
@@ -132,6 +138,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						s >> x >> comma >> y >> comma >> z;
 
 						sceneObjects.back()->rotation = Vector3D<float>(x, y, z);
+
 						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); }
 
 						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
@@ -349,6 +356,7 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 
 					case GeometryType::PLANE:
 						// Create a plane object
+						//PlaneObject* planeObject = new PlaneObject();
 						sceneObjects.push_back(new PlaneObject());
 						setObjectParameters(file, token, sceneObjects);
 						break;

@@ -96,6 +96,11 @@ public:
 		return *this;
 	}
 
+	Vector3D operator-() const
+	{
+		return Vector3D(-x, -y, -z);
+	}
+
 	// Dot product
 	T operator*(const Vector3D<T>& v) const
 	{
@@ -133,6 +138,24 @@ public:
 	bool operator<(const Vector3D<T>& v) const
 	{
 		return (x < v.x) && (y < v.y) && (z < v.z);
+	}
+
+	float operator[](int32_t i) const
+	{
+		switch (i)
+		{
+			case 0:
+				return x;
+
+			case 1:
+				return y;
+
+			case 2:
+				return z;
+
+			default:
+				return 0.0f;
+		}
 	}
 
 	T x;

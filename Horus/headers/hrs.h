@@ -9,6 +9,35 @@
 #include "ray.h"
 #include "shader.h"
 
+struct Morton
+{
+	uint32_t code;
+};
+
+inline uint32_t expandBits(uint32_t val)
+{
+	if (val >= (1 << 10))
+	{
+		val = (1 << 10) - 1;
+	}
+
+	val = (val | (val << 16)) & 0b00000011000000000000000011111111;
+	val = (val | (val << 8)) & 0b00000011000000000011110000001111;
+	val = (val | (val << 4)) & 0b00000011000000001100000011000000;
+	val = (val | (val << 2)) & 0b00000011000011000000000011000000;
+
+	return val;
+}
+
+inline uint32_t computeMorton(Vector3D<float> c)
+{
+	uint32_t cX32 = static_cast<uint32_t>(c.x);
+	uint32_t cY32 = static_cast<uint32_t>(c.y);
+	uint32_t cZ32 = static_cast<uint32_t>(c.z);
+
+	return expandBits(cZ32) << 2 | expandBits(cY32) << 1 | expandBits(cX32);
+}
+
 struct BoundingBox
 {
 	public:
@@ -18,13 +47,68 @@ struct BoundingBox
 		void setMin(const Vector3D<float> mn) { min = mn; }
 		void setMax(const Vector3D<float> mx) { max = mx; }
 
+		void assignBoundingBox(const BoundingBox& bb)
+		{
+			min = bb.getMin();
+			max = bb.getMax();
+		}
+
 		Vector3D<float> getMin() const { return min; }
 		Vector3D<float> getMax() const { return max; }
+
+		void computeCentroid() { centroid = (min * 0.5f) + (max * 0.5f); }
+		Vector3D<float> getCentroid() const { return (min * 0.5) + (max * 0.5); }
+
+		bool intersect(const Ray& ray, float tMin, float tMax) const
+		{
+			for (int i = 0 ; i< 3; ++i)
+			{
+				float invDir = 1.0f / ray.getDirection()[i];
+
+				float t0 = (min[i] - ray.getOrigin()[i]) * invDir;
+				float t1 = (max[i] - ray.getOrigin()[i]) * invDir;
+
+				if (invDir < 0.0f)
+				{
+					std::swap(t0, t1);
+				}
+
+				if (t0 > tMin) { tMin = t0; }
+				if (t1 < tMax) { tMax = t1; }
+
+				if (tMax <= tMin) { return false; }
+			}
+			return tMax > tMin;
+		}
+
+		BoundingBox& operator+=(const BoundingBox& a)
+		{
+			float minX = std::min(a.getMin().x, min.x);
+			float minY = std::min(a.getMin().y, min.y);
+			float minZ = std::min(a.getMin().z, min.z);
+
+			float maxX = std::max(a.getMax().x, max.x);
+			float maxY = std::max(a.getMax().y, max.y);
+			float maxZ = std::max(a.getMax().z, max.z);
+
+			min = Vector3D<float>(minX, minY, minZ);
+			max = Vector3D<float>(maxX, maxY, maxZ);
+
+			return *this;
+		}
 
 	private:
 		Vector3D<float> min;
 		Vector3D<float> max;
+
+		Vector3D<float> centroid;
 };
+
+inline BoundingBox operator+(const BoundingBox& a, const BoundingBox& b)
+{
+	BoundingBox c = a;
+	return c += b;
+}
 
 enum class ShaderType {
 	CONSTANT
@@ -116,7 +200,7 @@ class GeometryObject : public SceneObject {
 
 	public:
 
-		GeometryObject(GeometryType gType) : SceneObject(SceneObjectType::GEOMETRY), geometryType(gType) {}
+		GeometryObject(GeometryType gType) : SceneObject(SceneObjectType::GEOMETRY), geometryType(gType), ID(nextID++) {}
 
 		GeometryType getGeometryType()
 		{
@@ -129,6 +213,7 @@ class GeometryObject : public SceneObject {
 		}
 
 		virtual void setBoundingBox() {}
+		BoundingBox getBoundingBox() { return boundingBox; }
 
 		virtual void computeNormal() {}
 
@@ -155,6 +240,11 @@ class GeometryObject : public SceneObject {
 		bool getHitRecordFront() { return hitRecord.front; }
 		bool getHitRecordBack() { return hitRecord.back; }
 
+		void createMorton() { morton.code = computeMorton(position); }
+
+		uint32_t getId() { return ID; }
+		Morton getMorton() { return morton; }
+
 		float size;
 		HitRecord hitRecord;
 
@@ -177,6 +267,11 @@ class GeometryObject : public SceneObject {
 		bool rotationUpdated = false;
 		bool widthUpdated = false;
 		bool heightUpdated = false;
+
+		static uint32_t nextID;
+		uint32_t ID = 0;
+
+		Morton morton;
 };
 
 class SphereObject : public GeometryObject {
@@ -274,6 +369,36 @@ class PlaneObject : public GeometryObject {
 		virtual Vector3D<float> getNormal() override
 		{
 			return normal;
+		}
+
+		virtual void setBoundingBox() override
+		{
+			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+			
+			Vector3D<float> corners[4] = {
+				Vector3D<float> (-width * 0.5, -height * 0.5, 0.0f),
+				Vector3D<float>(width * 0.5, height * 0.5, 0.0f),
+				Vector3D<float>(-width * 0.5, height * 0.5, 0.0f),
+				Vector3D<float>(width * 0.5, -height * 0.5, 0.0f)
+			};
+			
+			//Vector3D<float> pc(- width * 0.5, -height * 0.5, 0.0f);
+			min = position + (R * corners[0]);
+			max = min;
+
+			for (size_t i = 1; i < 4; ++i)
+			{
+				Vector3D<float> corner = position + (R * corners[i]);
+				if (corner.x < min.x) { min.x = corner.x; };
+				if (corner.y < min.y) { min.y = corner.y; };
+				if (corner.z < min.z) { min.z = corner.z; };
+				if (corner.x > max.x) { max.x = corner.x; };
+				if (corner.y > max.y) { max.y = corner.y; };
+				if (corner.z > max.z) { max.z = corner.z; };
+			}
+
+			boundingBox.setMin(min);
+			boundingBox.setMax(max);
 		}
 
 		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) override

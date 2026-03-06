@@ -12,7 +12,7 @@ class Ray
 			origin = o;
 		}
 
-		Vector3D<float> getOrigin()
+		Vector3D<float> getOrigin() const
 		{
 			return origin;
 		}
@@ -22,7 +22,7 @@ class Ray
 			direction = d;
 		}
 
-		Vector3D<float> getDirection()
+		Vector3D<float> getDirection() const
 		{
 			return direction;
 		}
