@@ -22,9 +22,9 @@ inline uint32_t expandBits(uint32_t val)
 	}
 
 	val = (val | (val << 16)) & 0b00000011000000000000000011111111;
-	val = (val | (val << 8)) & 0b00000011000000000011110000001111;
-	val = (val | (val << 4)) & 0b00000011000000001100000011000000;
-	val = (val | (val << 2)) & 0b00000011000011000000000011000000;
+	val = (val | (val << 8)) & 0b00000011000000001111000000001111;
+	val = (val | (val << 4)) & 0b00000011000011000011000011000011;
+	val = (val | (val << 2)) & 0b00001001001001001001001001001001;
 
 	return val;
 }
@@ -57,7 +57,8 @@ struct BoundingBox
 		Vector3D<float> getMax() const { return max; }
 
 		void computeCentroid() { centroid = (min * 0.5f) + (max * 0.5f); }
-		Vector3D<float> getCentroid() const { return (min * 0.5) + (max * 0.5); }
+		Vector3D<float> getCentroid() const { return centroid; }
+		void setCentroid(Vector3D<float> c) { centroid = c; };
 
 		bool intersect(const Ray& ray, float tMin, float tMax) const
 		{
@@ -79,6 +80,15 @@ struct BoundingBox
 				if (tMax <= tMin) { return false; }
 			}
 			return tMax > tMin;
+		}
+
+		float getSurfaceArea()
+		{
+			float A1 = (max.x - min.x) * (max.y - min.y);
+			float A2 = (max.z - min.z) * (max.y - min.y);
+			float A3 = (max.x - min.x) * (max.z - min.z);
+
+			return 2.0f * (A1 + A2 + A3);
 		}
 
 		BoundingBox& operator+=(const BoundingBox& a)
@@ -200,7 +210,7 @@ class GeometryObject : public SceneObject {
 
 	public:
 
-		GeometryObject(GeometryType gType) : SceneObject(SceneObjectType::GEOMETRY), geometryType(gType), ID(nextID++) {}
+		GeometryObject(GeometryType gType) : SceneObject(SceneObjectType::GEOMETRY), geometryType(gType) {}
 
 		GeometryType getGeometryType()
 		{
@@ -213,7 +223,7 @@ class GeometryObject : public SceneObject {
 		}
 
 		virtual void setBoundingBox() {}
-		BoundingBox getBoundingBox() { return boundingBox; }
+		BoundingBox& getBoundingBox() { return boundingBox; }
 
 		virtual void computeNormal() {}
 
@@ -240,9 +250,8 @@ class GeometryObject : public SceneObject {
 		bool getHitRecordFront() { return hitRecord.front; }
 		bool getHitRecordBack() { return hitRecord.back; }
 
-		void createMorton() { morton.code = computeMorton(position); }
+		void createMorton() { morton.code = computeMorton(boundingBox.getCentroid()); }
 
-		uint32_t getId() { return ID; }
 		Morton getMorton() { return morton; }
 
 		float size;
@@ -268,9 +277,6 @@ class GeometryObject : public SceneObject {
 		bool widthUpdated = false;
 		bool heightUpdated = false;
 
-		static uint32_t nextID;
-		uint32_t ID = 0;
-
 		Morton morton;
 };
 
@@ -291,6 +297,8 @@ class SphereObject : public GeometryObject {
 
 			boundingBox.setMin(mn);
 			boundingBox.setMax(mx);
+
+			boundingBox.computeCentroid();
 		}
 
 		virtual void printProperties() override
@@ -399,6 +407,8 @@ class PlaneObject : public GeometryObject {
 
 			boundingBox.setMin(min);
 			boundingBox.setMax(max);
+
+			boundingBox.computeCentroid();
 		}
 
 		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) override

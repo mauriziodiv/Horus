@@ -23,8 +23,6 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"color", ShaderParameterType::COLOR}
 };
 
-uint32_t GeometryObject::nextID = 0;
-
 Ray CameraObject::genRay(float u, float v)
 {
 	Vector3D<float> direction = lower_left_corner + (horizontal * u) + (vertical * v) - position;
