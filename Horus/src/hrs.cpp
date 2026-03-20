@@ -16,7 +16,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
-	{"constant", ShaderType::CONSTANT}
+	{"constant", ShaderType::CONSTANT},
+	{"depth", ShaderType::DEPTH}
 };
 
 std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
@@ -428,6 +429,10 @@ bool GeometryObject::assignShader(ShaderType sType)
 			shader = Constant();
 			return true;
 
+		case ShaderType::DEPTH:
+			shader = Depth();
+			return true;
+
 		default:
 			break;
 	}
@@ -467,7 +472,6 @@ bool GeometryObject::parse()
 								switch (spType)
 								{
 									case ShaderParameterType::COLOR:
-
 										token.clear();
 
 										tokenSearch(shaderFile, '/', token);
@@ -494,6 +498,15 @@ bool GeometryObject::parse()
 										return false;
 								}
 							}
+
+							return true; 
+						}
+						return false;
+
+					case ShaderType::DEPTH:
+						if (assignShader(sType))
+						{
+							return true;
 						}
 						return false;
 

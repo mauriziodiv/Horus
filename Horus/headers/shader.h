@@ -9,8 +9,10 @@ class Shader
 	public:
 		Shader() : color(0.0f, 0.0f, 0.0f) {}
 
-		void setColor(const Vector3D<float> col) { color = col; }
-		Vector3D<float> getColor() const { return color; }
+		//void setColor(const Vector3D<float> col) { color = col; }
+		virtual void setColor(const Vector3D<float> col) { color = col; }
+		//Vector3D<float> getColor() const { return color; }
+		virtual Vector3D<float> getColor() { return color; }
 
 	private:
 		Vector3D<float> color;
@@ -19,6 +21,17 @@ class Shader
 class Constant : public Shader
 {
 	public:
+		void setColor(const Vector3D<float> col) override { color = col; }
+		Vector3D<float> getColor() override { return color; }
 
 	private:
+		Vector3D<float> color;
+};
+
+class Depth : public Shader
+{
+	public:
+
+	private:
+
 };

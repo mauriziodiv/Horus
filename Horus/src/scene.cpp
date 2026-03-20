@@ -157,31 +157,32 @@ void Scene::render()
 
 			float closestT = ray.getTMax();
 
+			Vector3D<float> color;
+
 			for (GeometryObject* geometry : geometries)
 			{
-				//if (geometry->getGeometryType() == GeometryType::SPHERE)
-				//{
-					if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
-					{
-						closestT = geometry->hitRecord.t;
-						closestHit = geometry;
-					}
-				//}
+				if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
+				{
+					closestT = geometry->hitRecord.t;
+					closestHit = geometry;
 
-				//if (geometry->getGeometryType() == GeometryType::PLANE)
-				//{
-				//	if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
-				//	{
-				//		closestT = geometry->hitRecord.t;
-				//		closestHit = geometry;
-				//	}
-				//}
+					auto& shader = geometry->getShader();
+
+					if (std::holds_alternative<Constant>(shader))
+					{
+						color = std::visit([](auto& p) { return p.getColor(); }, shader);
+					}
+					else if (std::holds_alternative<Depth>(shader))
+					{
+						color = Vector3D<float>(1.0f / closestT, 1.0f /closestT, 1.0f / closestT);
+					}
+				}
 			}
 
 			if (closestHit)
 			{
-				output.writeBuffer(std::visit([](auto& p) { return p.getColor(); }, closestHit->getShader()));
-				
+				//output.writeBuffer(std::visit([](auto& p) { return p.getColor(); }, closestHit->getShader()));
+				output.writeBuffer(color);
 			}
 			else
 			{

@@ -121,7 +121,8 @@ inline BoundingBox operator+(const BoundingBox& a, const BoundingBox& b)
 }
 
 enum class ShaderType {
-	CONSTANT
+	CONSTANT,
+	DEPTH
 };
 
 enum class ShaderParameterType {
@@ -245,7 +246,7 @@ class GeometryObject : public SceneObject {
 
 		bool linkShader(std::string& shaderFilePath);
 
-		std::variant<Shader, Constant>& getShader() { return shader; }
+		std::variant<Shader, Constant, Depth>& getShader() { return shader; }
 
 		bool getHitRecordFront() { return hitRecord.front; }
 		bool getHitRecordBack() { return hitRecord.back; }
@@ -266,7 +267,7 @@ class GeometryObject : public SceneObject {
 
 		std::string token;
 
-		std::variant<Shader, Constant> shader;
+		std::variant<Shader, Constant, Depth> shader;
 
 		bool parse();
 
