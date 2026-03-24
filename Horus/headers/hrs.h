@@ -406,8 +406,9 @@ class PlaneObject : public GeometryObject {
 				if (corner.z > max.z) { max.z = corner.z; };
 			}
 
-			boundingBox.setMin(min);
-			boundingBox.setMax(max);
+			const float epsilon = 0.001f;
+			boundingBox.setMin(min - Vector3D<float>(epsilon, epsilon, epsilon));
+			boundingBox.setMax(max + Vector3D<float>(epsilon, epsilon, epsilon));
 
 			boundingBox.computeCentroid();
 		}
@@ -418,7 +419,7 @@ class PlaneObject : public GeometryObject {
 
 			float t = ((position - ray.getOrigin()) * normal) / (ray.getDirection() * normal);
 
-			if (t > 0 && t> tMin && t < tMax)
+			if (t > 0 && t > tMin && t < tMax)
 			{
 				Vector3D<float> hitPoint = ray.getPointat(t);
 

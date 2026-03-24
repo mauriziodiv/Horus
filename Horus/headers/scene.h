@@ -1,6 +1,8 @@
 #pragma once
 #include "hrs.h"
 #include "output.h"
+#include "render.h"
+#include "accelerator.h"
 
 class Scene {
 

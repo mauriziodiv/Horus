@@ -111,6 +111,8 @@ public:
 
 	void buildBVH(std::vector<GeometryObject*>& objects);
 
+	GeometryObject* traversal(Ray& ray, float tMin, float tMax);
+
 private:
 	void* BVHNode_memory = nullptr;
 

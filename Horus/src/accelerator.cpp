@@ -1,5 +1,6 @@
 #include "accelerator.h"
 
+// Sorts the Morton primitives using a radix sort algorithm.
 void BVH::sortMortonPrimitive(std::vector<MortonPrimitive>& mortonPrimitives)
 {
 	std::vector<MortonPrimitive> temp(mortonPrimitives.size());
@@ -45,6 +46,7 @@ void BVH::sortMortonPrimitive(std::vector<MortonPrimitive>& mortonPrimitives)
 	}
 }
 
+// Remaps the coordinates of the geometry objects to fit within a 10-bit range for Morton code computation.
 void BVH::remapCoordinatesForMorton(std::vector<GeometryObject*>& objects, Vector3D<float> min, Vector3D<float> max)
 {
 	Vector3D<float> centroid;
@@ -65,6 +67,7 @@ void BVH::remapCoordinatesForMorton(std::vector<GeometryObject*>& objects, Vecto
 	}
 }
 
+// Collects the bounding boxes of the geometry objects and stores them in the 'boundingBoxes' vector. Returns true if successful, false otherwise.
 bool BVH::collectBoundingBoxes(std::vector<GeometryObject*>& objects)
 {
 	if (!objects.empty())
@@ -80,6 +83,7 @@ bool BVH::collectBoundingBoxes(std::vector<GeometryObject*>& objects)
 	return false;
 }
 
+// Creates a bounding box that encompasses the centroids of the geometry objects in the specified range. Returns true if successful, false otherwise.
 bool BVH::createBoundingBoxFromCentroids(std::vector<GeometryObject*>& objects, int32_t begin, int32_t end)
 {
 	if (!objects.empty())
@@ -110,6 +114,7 @@ bool BVH::createBoundingBoxFromCentroids(std::vector<GeometryObject*>& objects, 
 	return false;
 }
 
+// Merges the bounding boxes of the geometry objects in the specified range and assigns the merged bounding box to the given BVH node. Returns true if successful, false otherwise.
 bool BVH::mergeBoundingBoxes(std::vector<GeometryObject*>& objects, BVHNode* node, int32_t begin, int32_t end)
 {
 	if (!objects.empty())
@@ -127,6 +132,7 @@ bool BVH::mergeBoundingBoxes(std::vector<GeometryObject*>& objects, BVHNode* nod
 	return false;
 }
 
+// Builds the BVH tree by collecting bounding boxes, creating the root node, merging bounding boxes, and creating a bounding box from centroids. Returns true if successful, false otherwise.
 bool BVH::buildRoot(std::vector<GeometryObject*>& objects)
 {
 	if (collectBoundingBoxes(objects))
@@ -151,6 +157,7 @@ bool BVH::buildRoot(std::vector<GeometryObject*>& objects)
 	return false;
 }
 
+// Computes the Morton codes for the geometry objects and stores them in the 'mortonPrimitives' vector. Returns true if successful, false otherwise.
 bool BVH::computeMorton(std::vector<GeometryObject*>& objects)
 {
 	if (!objects.empty())
@@ -170,6 +177,7 @@ bool BVH::computeMorton(std::vector<GeometryObject*>& objects)
 	return false;
 }
 
+// Partitions the Morton primitives into treelets based on their Morton codes. Returns true if successful, false otherwise.
 bool BVH::treeletSearch(std::vector<MortonPrimitive>& mortonPrimitives)
 {
 	if (!mortonPrimitives.empty())
@@ -200,6 +208,7 @@ bool BVH::treeletSearch(std::vector<MortonPrimitive>& mortonPrimitives)
 	return false;
 }
 
+// Performs a binary search on the Morton primitives to find the split point based on the specified mask. Returns the index of the split point.
 uint32_t BVH::binarySearch(std::vector<MortonPrimitive*> mortonPrimitives, int32_t begin, int32_t end, uint32_t mask)
 {
 	int32_t mid = static_cast<int>(begin + (end - begin) / 2);
@@ -219,6 +228,7 @@ uint32_t BVH::binarySearch(std::vector<MortonPrimitive*> mortonPrimitives, int32
 	}
 }
 
+//
 BVHNode* BVH::createLBVH(std::vector<MortonPrimitive*> mortonPrimitives, int32_t begin, int32_t end, uint32_t mask, BVHNode* nodes, int32_t& nodeIndex)
 {
 	if (mask == 0 || end - begin == 1)
@@ -266,6 +276,7 @@ BVHNode* BVH::createLBVH(std::vector<MortonPrimitive*> mortonPrimitives, int32_t
 	}
 }
 
+// Connects the treelets into a single BVH tree. Returns the root node of the connected tree.
 BVHNode* BVH::connectNodes(std::vector<Treelet>& treelets, BVHNode* nodes, int32_t& nodeIndex)
 {
 	if (!treelets.empty())
@@ -297,9 +308,9 @@ BVHNode* BVH::connectNodes(std::vector<Treelet>& treelets, BVHNode* nodes, int32
 		for (int32_t i = 1; i < treelets.size(); ++i)
 		{
 			BVHNode* root = treelets[i].getRoot();
-			BoundingBox treeletBB = root->getBoundingBox();
-			treeletBB.computeCentroid();
-			Vector3D<float> centroid = treeletBB.getCentroid();
+			//BoundingBox treeletBB = root->getBoundingBox();
+			root->getBoundingBox().computeCentroid();
+			Vector3D<float> centroid = root->getBoundingBox().getCentroid();
 
 			float x = centroid.x;
 			float y = centroid.y;
@@ -329,107 +340,126 @@ BVHNode* BVH::connectNodes(std::vector<Treelet>& treelets, BVHNode* nodes, int32
 
 		float axisMin = (axis == 0) ? xMin : (axis == 1) ? yMin : zMin;
 		float axisRange = (axis == 0) ? xRange : (axis == 1) ? yRange : zRange;
-		
-		for (int32_t i = 0; i < treelets.size(); ++i)
-		{
-			Vector3D<float> centroid = treelets[i].getRoot()->getBoundingBox().getCentroid();
-
-			int32_t bucketIndex = nBukets * ((centroid[axis] - axisMin) / axisRange);
-
-			if (bucketIndex == nBukets)
-			{
-				bucketIndex = nBukets - 1;
-			}
-
-			if (buckets[bucketIndex].getCount() == 0)
-			{
-				buckets[bucketIndex].setBoundingBox(treelets[i].getRoot()->getBoundingBox());
-
-				buckets[bucketIndex].incCount();
-			}
-			else
-			{
-				buckets[bucketIndex].incCount();
-
-				buckets[bucketIndex].getBoundingBox() += treelets[i].getRoot()->getBoundingBox();
-			}
-		}
-
-		float cost[nBukets - 1];
-
-		int32_t leftCount[nBukets - 1];
-		int32_t rightCount[nBukets - 1];
-
-		BoundingBox leftBoundingBox[nBukets - 1];
-		BoundingBox rightBoundingBox[nBukets - 1];
-
-		for (int32_t i = 0; i < nBukets - 1; ++i)
-		{
-			if (i == 0)
-			{
-				leftCount[0] = buckets[0].getCount();
-				leftBoundingBox[0] = buckets[0].getBoundingBox();
-			}
-			else
-			{
-				leftCount[i] = leftCount[i - 1] + buckets[i].getCount();
-				leftBoundingBox[i] = leftBoundingBox[i - 1] + buckets[i].getBoundingBox();
-			}
-		}
-
-		for (int32_t i = nBukets - 2; i >= 0; --i)
-		{
-			if (i == nBukets - 2)
-			{
-				rightCount[i] = buckets[nBukets - 1].getCount();
-				rightBoundingBox[i] = buckets[nBukets - 1].getBoundingBox();
-			}
-			else
-			{
-				rightCount[i] = rightCount[i + 1] + buckets[i + 1].getCount();
-				rightBoundingBox[i] = rightBoundingBox[i + 1] + buckets[i + 1].getBoundingBox();
-			}
-		}
-
-		float minCost;
-		int32_t minCostSplit = 0;
-
-		for (int32_t i = 0; i < nBukets - 1; ++i)
-		{
-			{
-				cost[i] = (leftCount[i] * (leftBoundingBox[i].getSurfaceArea()) + (rightCount[i] * rightBoundingBox[i].getSurfaceArea()));
-
-				if (i == 0)
-				{
-					minCost = cost[i];
-				}
-				else
-				{
-					if (cost[i] < minCost)
-					{
-						minCost = cost[i];
-						minCostSplit = i;
-					}
-				}
-			}
-		}
 
 		std::vector<Treelet> leftTreelets;
 		std::vector<Treelet> rightTreelets;
 
-		for (int32_t i = 0; i < treelets.size(); ++i)
+		if (axisRange == 0.0f)
 		{
-			int32_t bucketIndex = nBukets * (treelets[i].getRoot()->getBoundingBox().getCentroid()[axis] - axisMin) / axisRange;
-
-			if (bucketIndex == nBukets) { bucketIndex = nBukets - 1; }
-
-			if (bucketIndex <= minCostSplit)
+			int32_t mid = static_cast<int>(treelets.size() / 2);
+			leftTreelets.assign(treelets.begin(), treelets.begin() + mid);
+			rightTreelets.assign(treelets.begin() + mid, treelets.end());
+		}
+		else
+		{
+			for (int32_t i = 0; i < treelets.size(); ++i)
 			{
-				leftTreelets.push_back(treelets[i]);
+				Vector3D<float> centroid = treelets[i].getRoot()->getBoundingBox().getCentroid();
+
+				int32_t bucketIndex = nBukets * ((centroid[axis] - axisMin) / axisRange);
+
+				if (bucketIndex == nBukets)
+				{
+					bucketIndex = nBukets - 1;
+				}
+
+				if (buckets[bucketIndex].getCount() == 0)
+				{
+					buckets[bucketIndex].setBoundingBox(treelets[i].getRoot()->getBoundingBox());
+
+					buckets[bucketIndex].incCount();
+				}
+				else
+				{
+					buckets[bucketIndex].incCount();
+
+					buckets[bucketIndex].getBoundingBox() += treelets[i].getRoot()->getBoundingBox();
+				}
 			}
-			else
+
+			float cost[nBukets - 1];
+
+			int32_t leftCount[nBukets - 1];
+			int32_t rightCount[nBukets - 1];
+
+			BoundingBox leftBoundingBox[nBukets - 1];
+			BoundingBox rightBoundingBox[nBukets - 1];
+
+			for (int32_t i = 0; i < nBukets - 1; ++i)
 			{
-				rightTreelets.push_back(treelets[i]);
+				if (i == 0)
+				{
+					leftCount[0] = buckets[0].getCount();
+					leftBoundingBox[0] = buckets[0].getBoundingBox();
+				}
+				else
+				{
+					leftCount[i] = leftCount[i - 1] + buckets[i].getCount();
+					leftBoundingBox[i] = leftBoundingBox[i - 1] + buckets[i].getBoundingBox();
+				}
+			}
+
+			for (int32_t i = nBukets - 2; i >= 0; --i)
+			{
+				if (i == nBukets - 2)
+				{
+					rightCount[i] = buckets[nBukets - 1].getCount();
+					rightBoundingBox[i] = buckets[nBukets - 1].getBoundingBox();
+				}
+				else
+				{
+					rightCount[i] = rightCount[i + 1] + buckets[i + 1].getCount();
+					rightBoundingBox[i] = rightBoundingBox[i + 1] + buckets[i + 1].getBoundingBox();
+				}
+			}
+
+			float minCost;
+			int32_t minCostSplit = 0;
+
+			for (int32_t i = 0; i < nBukets - 1; ++i)
+			{
+				{
+					cost[i] = (leftCount[i] * (leftBoundingBox[i].getSurfaceArea()) + (rightCount[i] * rightBoundingBox[i].getSurfaceArea()));
+
+					if (i == 0)
+					{
+						minCost = cost[i];
+					}
+					else
+					{
+						if (cost[i] < minCost)
+						{
+							minCost = cost[i];
+							minCostSplit = i;
+						}
+					}
+				}
+			}
+
+			//std::vector<Treelet> leftTreelets;
+			//std::vector<Treelet> rightTreelets;
+
+			for (int32_t i = 0; i < treelets.size(); ++i)
+			{
+				int32_t bucketIndex = nBukets * (treelets[i].getRoot()->getBoundingBox().getCentroid()[axis] - axisMin) / axisRange;
+
+				if (bucketIndex == nBukets) { bucketIndex = nBukets - 1; }
+
+				if (bucketIndex <= minCostSplit)
+				{
+					leftTreelets.push_back(treelets[i]);
+				}
+				else
+				{
+					rightTreelets.push_back(treelets[i]);
+				}
+			}
+
+			if (leftTreelets.empty() || rightTreelets.empty())
+			{
+				int32_t mid = static_cast<int>(treelets.size() / 2);
+				leftTreelets.assign(treelets.begin(), treelets.begin() + mid);
+				rightTreelets.assign(treelets.begin() + mid, treelets.end());
 			}
 		}
 
@@ -450,6 +480,7 @@ BVHNode* BVH::connectNodes(std::vector<Treelet>& treelets, BVHNode* nodes, int32
 	return nullptr;
 }
 
+// Flattens the BVH tree into a linear array of nodes for efficient traversal. Returns the index of the current node in the linear array.
 int32_t BVH::flattenBVH(BVHNode* node, int32_t& offset)
 {
 	int32_t index = offset;
@@ -513,6 +544,7 @@ bool BVH::createNodes(std::vector<Treelet>& treelets)
 	return false;
 }
 
+// Builds the BVH tree from the given geometry objects by performing several steps including building the root node, computing Morton codes, sorting Morton primitives, partitioning into treelets, creating nodes for each treelet, and connecting the nodes into a single BVH tree.
 void BVH::buildBVH(std::vector<GeometryObject*>& objects)
 {
 	if (buildRoot(objects))
@@ -540,4 +572,52 @@ void BVH::buildBVH(std::vector<GeometryObject*>& objects)
 			}
 		}
 	}
+}
+
+// Traverses the BVH tree to find the closest intersection of a ray with the geometry objects. Returns a pointer to the closest hit object, or nullptr if no intersection is found.
+GeometryObject* BVH::traversal(Ray& ray, float tMin, float tMax)
+{
+	GeometryObject* closestHit = nullptr;
+	float closestT = tMax;
+
+	int32_t stack[64];
+	int32_t stackIndex = 0;
+	int32_t nodeIndex = 0;
+
+	while (true)
+	{
+		linearBVH& node = linearNodes[nodeIndex];
+
+		if (node.getBoundingBox().intersect(ray, tMin, closestT))
+		{
+			if (node.getNPrimitives() > 0)
+			{
+				for (int32_t i = 0; i < node.getNPrimitives(); ++i)
+				{
+					GeometryObject* obj = orderedPrimitives[node.getPrimitiveOffset() + i];
+
+					if (obj->rayIntersection(ray, tMin, closestT))
+					{
+						closestT = obj->hitRecord.t;
+						closestHit = obj;
+					}
+				}
+
+				if (stackIndex == 0) { break; }
+				nodeIndex = stack[--stackIndex];
+			}
+			else
+			{
+				stack[stackIndex++] = node.getSecondChildOffset();
+				++nodeIndex;
+			}
+		}
+		else
+		{
+			if (stackIndex == 0) { break; }
+			nodeIndex = stack[--stackIndex];
+		}
+	}
+
+	return closestHit;
 }

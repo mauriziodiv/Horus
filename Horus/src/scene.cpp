@@ -144,6 +144,11 @@ void Scene::render()
 	float width = camera->getWidth();
 	float height = camera->getHeight();
 
+	Integrator integrator;
+
+	BVH bvh;
+	bvh.buildBVH(geometries);
+
 	for (int i = height - 1; i >= 0; --i)
 	{
 		for (int j = 0; j < width; ++j)
@@ -151,43 +156,45 @@ void Scene::render()
 			float u = (float)j / (width - 1);
 			float v = (float)i / (height - 1);
 
-			GeometryObject* closestHit = nullptr;
+			//GeometryObject* closestHit = nullptr;
 
 			Ray ray(camera->genRay(u, v));
 
-			float closestT = ray.getTMax();
+			//float closestT = ray.getTMax();
 
-			Vector3D<float> color;
+			//Vector3D<float> color;
 
-			for (GeometryObject* geometry : geometries)
-			{
-				if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
-				{
-					closestT = geometry->hitRecord.t;
-					closestHit = geometry;
+			//for (GeometryObject* geometry : geometries)
+			//{
+			//	if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
+			//	{
+			//		closestT = geometry->hitRecord.t;
+			//		closestHit = geometry;
 
-					auto& shader = geometry->getShader();
+			//		auto& shader = geometry->getShader();
 
-					if (std::holds_alternative<Constant>(shader))
-					{
-						color = std::visit([](auto& p) { return p.getColor(); }, shader);
-					}
-					else if (std::holds_alternative<Depth>(shader))
-					{
-						color = Vector3D<float>(1.0f / closestT, 1.0f /closestT, 1.0f / closestT);
-					}
-				}
-			}
+			//		if (std::holds_alternative<Constant>(shader))
+			//		{
+			//			color = std::visit([](auto& p) { return p.getColor(); }, shader);
+			//		}
+			//		else if (std::holds_alternative<Depth>(shader))
+			//		{
+			//			color = Vector3D<float>(1.0f / closestT, 1.0f /closestT, 1.0f / closestT);
+			//		}
+			//	}
+			//}
 
-			if (closestHit)
-			{
-				//output.writeBuffer(std::visit([](auto& p) { return p.getColor(); }, closestHit->getShader()));
-				output.writeBuffer(color);
-			}
-			else
-			{
-				output.writeBuffer(Vector3D(0.0f, 0.0f, 0.0f));
-			}
+			Vector3D<float> color = integrator.rayPath(ray, bvh, 0);
+			output.writeBuffer(color);
+
+			//if (closestHit)
+			//{
+			//	output.writeBuffer(color);
+			//}
+			//else
+			//{
+			//	output.writeBuffer(Vector3D(0.0f, 0.0f, 0.0f));
+			//}
 		}
 	}
 	output.write();
