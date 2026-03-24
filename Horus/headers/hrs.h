@@ -623,8 +623,8 @@ class PerspectiveCameraObject : public CameraObject {
 		float fieldOfView;
 };
 
-bool SceneBuilder(const std::string&, std::vector<SceneObject*>&);
+bool SceneBuilder(const std::string&, std::vector<std::unique_ptr<SceneObject>>&);
 
 void tokenSearch(std::ifstream& file, char c, std::string& token);
 void charSearch(std::ifstream& file, char c, std::string& token);
-void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects);
+void setObjectParameters(std::ifstream& file, std::string& token, std::vector<std::unique_ptr<SceneObject>>& sceneObjects);

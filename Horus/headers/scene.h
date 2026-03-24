@@ -8,7 +8,7 @@ class Scene {
 
 	public:
 		Scene();
-		bool getScene(const std::vector<SceneObject*>& scene);
+		bool getScene(std::vector<std::unique_ptr<SceneObject>>& scene);
 
 		CameraObject* getCamera() { return camera; }
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
@@ -20,7 +20,7 @@ class Scene {
 		const std::string_view& getFilePathWrite() { return filePathWrite; }
 
 	private:
-		std::vector<SceneObject*> sceneObjects;
+		std::vector<std::unique_ptr<SceneObject>> sceneObjects;
 		CameraObject* camera;
 		std::vector<GeometryObject*> geometries;
 		std::vector<LightObject*> lights;

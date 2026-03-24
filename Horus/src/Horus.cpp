@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	// Validate input arguments
 	if (!inputValidation(inputDescription)) { return 1; }
 
-	std::vector<SceneObject*> sceneObjects;
+	std::vector<std::unique_ptr<SceneObject>> sceneObjects;
 	bool result = SceneBuilder(inputDescription[0], sceneObjects);
 
 	// Check if scene was built correctly
@@ -72,5 +72,4 @@ int main(int argc, char* argv[])
 	scene.render();
 
 	return 0;
-
 }

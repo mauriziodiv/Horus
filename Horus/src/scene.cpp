@@ -10,14 +10,15 @@ Scene::Scene() : sceneObjects(), camera(nullptr), geometries(), lights(), render
 }
 
 // Initializes the scene by checking for the presence of a camera, geometries, and lights. Returns true if the scene is valid, false otherwise.
-bool Scene::getScene(const std::vector<SceneObject*>& scene)
+bool Scene::getScene(std::vector<std::unique_ptr<SceneObject>>& scene)
 {
 	if (scene.empty())
 	{
 		return false;
 	}
 
-	sceneObjects = scene;
+	//sceneObjects = scene;
+	sceneObjects = std::move(scene);
 
 	if (!cameraCheck())
 	{
@@ -33,11 +34,11 @@ bool Scene::getScene(const std::vector<SceneObject*>& scene)
 // Checks for the presence of a camera.
 bool Scene::cameraCheck()
 {
-	for (SceneObject* obj : sceneObjects)
+	for (const auto& obj : sceneObjects)
 	{
 		if (obj->getType() == SceneObjectType::CAMERA)
 		{
-			camera = static_cast<CameraObject*>(obj);
+			camera = static_cast<CameraObject*>(obj.get());
 			//camera->setPosition(camera->getPosition().x, camera->getPosition().y, camera->getPosition().z);
 			//camera->setWindow(camera->getWidth(), camera->getHeight());
 			//std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -59,11 +60,11 @@ bool Scene::geometriesCheck()
 {
 	geometries.clear();
 
-	for (SceneObject* geo : sceneObjects)
+	for (const auto& geo : sceneObjects)
 	{
 		if (geo->getType() == SceneObjectType::GEOMETRY)
 		{
-			geometries.push_back(static_cast<GeometryObject*>(geo));
+			geometries.push_back(static_cast<GeometryObject*>(geo.get()));
 		}
 	}
 
@@ -80,11 +81,11 @@ bool Scene::lightCheck()
 {
 	lights.clear();
 
-	for (SceneObject* lgts : sceneObjects)
+	for (const auto& lgts : sceneObjects)
 	{
 		if (lgts->getType() == SceneObjectType::LIGHT)
 		{
-			lights.push_back(static_cast<LightObject*>(lgts));
+			lights.push_back(static_cast<LightObject*>(lgts.get()));
 		}
 	}
 
@@ -160,41 +161,8 @@ void Scene::render()
 
 			Ray ray(camera->genRay(u, v));
 
-			//float closestT = ray.getTMax();
-
-			//Vector3D<float> color;
-
-			//for (GeometryObject* geometry : geometries)
-			//{
-			//	if (geometry->rayIntersection(ray, ray.getTMin(), closestT))
-			//	{
-			//		closestT = geometry->hitRecord.t;
-			//		closestHit = geometry;
-
-			//		auto& shader = geometry->getShader();
-
-			//		if (std::holds_alternative<Constant>(shader))
-			//		{
-			//			color = std::visit([](auto& p) { return p.getColor(); }, shader);
-			//		}
-			//		else if (std::holds_alternative<Depth>(shader))
-			//		{
-			//			color = Vector3D<float>(1.0f / closestT, 1.0f /closestT, 1.0f / closestT);
-			//		}
-			//	}
-			//}
-
 			Vector3D<float> color = integrator.rayPath(ray, bvh, 0);
 			output.writeBuffer(color);
-
-			//if (closestHit)
-			//{
-			//	output.writeBuffer(color);
-			//}
-			//else
-			//{
-			//	output.writeBuffer(Vector3D(0.0f, 0.0f, 0.0f));
-			//}
 		}
 	}
 	output.write();

@@ -78,7 +78,7 @@ void computePlaneNormalCheck(GeometryObject& geometryObject)
 }
 
 // Sets the parameters of the last created scene object based on the tokens read from the file.
-void setObjectParameters(std::ifstream& file, std::string& token, std::vector<SceneObject*>& sceneObjects)
+void setObjectParameters(std::ifstream& file, std::string& token, std::vector<std::unique_ptr<SceneObject>>& sceneObjects)
 {
 	while (!file.eof() && file.peek() != ';')
 	{
@@ -102,23 +102,23 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
-						sceneObjects.back()->position = Vector3D<float>(x, y, z);
-						//sceneObjects.back()->setI
+						sceneObjects.back().get()->position = Vector3D<float>(x, y, z);
+						//sceneObjects.back().get()->setI
 
-						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) 
+						if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY) 
 						{ 
-							static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); 
+							static_cast<GeometryObject*>(sceneObjects.back().get())->setPositionUpdated(true); 
 
-							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back()));
+							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back().get()));
 
-							static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->setBoundingBox();
 
-							static_cast<GeometryObject*>(sceneObjects.back())->createMorton();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->createMorton();
 						}
 
-						//if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
+						//if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY)
 						//{
-						//	static_cast<GeometryObject*>(sceneObjects.back())->setBoundingBox();
+						//	static_cast<GeometryObject*>(sceneObjects.back().get())->setBoundingBox();
 						//}
 					}
 					break;
@@ -136,15 +136,15 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						s >> x >> comma >> y >> comma >> z;
 
-						sceneObjects.back()->rotation = Vector3D<float>(x, y, z);
+						sceneObjects.back().get()->rotation = Vector3D<float>(x, y, z);
 
-						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back())->setPositionUpdated(true); }
+						if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back().get())->setPositionUpdated(true); }
 
-						if (sceneObjects.back()->getType() == SceneObjectType::GEOMETRY)
+						if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY)
 						{
-							static_cast<GeometryObject*>(sceneObjects.back())->setRotationUpdated(true);
+							static_cast<GeometryObject*>(sceneObjects.back().get())->setRotationUpdated(true);
 
-							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back()));
+							computePlaneNormalCheck(*static_cast<GeometryObject*>(sceneObjects.back().get()));
 						}
 					}
 					break;
@@ -155,7 +155,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
 						
 						if (geometryObject)
 						{
@@ -170,7 +170,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
 
 						if (geometryObject && geometryObject->getGeometryType() == GeometryType::PLANE)
 						{
@@ -180,9 +180,9 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 							planeObject->setWidthUpdated(true);
 						}
 
-						if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
 						{
-							static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->computeNormal();
 						}
 					}
 					break;
@@ -193,7 +193,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
 
 						if (geometryObject && geometryObject->getGeometryType() == GeometryType::PLANE)
 						{
@@ -202,9 +202,9 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 							planeObject->setHeightUpdated(true);
 						}
 
-						if (static_cast<GeometryObject*>(sceneObjects.back())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back())->getGeometryType() != GeometryType::SPHERE)
+						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
 						{
-							static_cast<GeometryObject*>(sceneObjects.back())->computeNormal();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->computeNormal();
 						}
 					}
 					break;
@@ -215,7 +215,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back());
+						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back().get());
 						
 						if (lightObject)
 						{
@@ -230,7 +230,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 						if (!token.empty())
 						{
-							SphereObject* sphereObject = dynamic_cast<SphereObject*>(sceneObjects.back());
+							SphereObject* sphereObject = dynamic_cast<SphereObject*>(sceneObjects.back().get());
 
 							if (sphereObject)
 							{
@@ -251,7 +251,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
-						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back());
+						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back().get());
 
 						if (cameraObject)
 						{
@@ -266,7 +266,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back());
+						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back().get());
 
 						if (cameraObject)
 						{
@@ -288,7 +288,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 
 					if (!token.empty())
 					{
-						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back());
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
 
 						if (geometryObject)
 						{
@@ -306,7 +306,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<Sc
 }
 
 // Builds the scene by reading the specified file and creating scene objects based on the tokens found in the file. The created objects are stored in the 'sceneObjects' vector.
-bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneObjects)
+bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<SceneObject>>& sceneObjects)
 {
 
 	std::ifstream file(filePath);
@@ -349,14 +349,14 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 				{
 					case GeometryType::SPHERE:
 						// Create a sphere object
-						sceneObjects.push_back(new SphereObject(1.0f));
+						sceneObjects.emplace_back(std::make_unique<SphereObject>(1.0f));
 						setObjectParameters(file, token, sceneObjects);
 						break;
 
 					case GeometryType::PLANE:
 						// Create a plane object
 						//PlaneObject* planeObject = new PlaneObject();
-						sceneObjects.push_back(new PlaneObject());
+						sceneObjects.emplace_back(std::make_unique<PlaneObject>());
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}
@@ -370,7 +370,7 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 				{
 					case LightType::POINT:
 						// Create a point light object
-						sceneObjects.push_back(new PointLightObject(1.0f));
+						sceneObjects.emplace_back(std::make_unique<PointLightObject>(1.0f));
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}
@@ -384,7 +384,7 @@ bool SceneBuilder(const std::string& filePath, std::vector<SceneObject*>& sceneO
 				{
 					case CameraType::PERSPECTIVE:
 						// Create a perspective camera object
-						sceneObjects.push_back(new PerspectiveCameraObject(45.0f));
+						sceneObjects.emplace_back(std::make_unique<PerspectiveCameraObject>(45.0f));
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}

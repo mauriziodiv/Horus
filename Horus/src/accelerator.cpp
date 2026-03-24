@@ -228,7 +228,7 @@ uint32_t BVH::binarySearch(std::vector<MortonPrimitive*> mortonPrimitives, int32
 	}
 }
 
-//
+
 BVHNode* BVH::createLBVH(std::vector<MortonPrimitive*> mortonPrimitives, int32_t begin, int32_t end, uint32_t mask, BVHNode* nodes, int32_t& nodeIndex)
 {
 	if (mask == 0 || end - begin == 1)

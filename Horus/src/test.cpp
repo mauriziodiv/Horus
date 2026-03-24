@@ -124,7 +124,7 @@ void T_SCENE_BUILDER(const std::vector<std::string>& args)
 	else
 	{
 		// Call the actual function being tested
-		std::vector<SceneObject*> sceneObjects;
+		std::vector<std::unique_ptr<SceneObject>> sceneObjects;
 		bool result = SceneBuilder(args[0], sceneObjects);
 		
 		// Display results
