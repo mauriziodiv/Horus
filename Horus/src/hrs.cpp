@@ -178,6 +178,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							PlaneObject* planeObject = dynamic_cast<PlaneObject*>(geometryObject);
 							planeObject->setWidth(std::stof(token));
 							planeObject->setWidthUpdated(true);
+
+							planeObject->setBoundingBox();
 						}
 
 						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
@@ -200,6 +202,8 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							PlaneObject* planeObject = dynamic_cast<PlaneObject*>(geometryObject);
 							planeObject->setHeight(std::stof(token));
 							planeObject->setHeightUpdated(true);
+
+							planeObject->setBoundingBox();
 						}
 
 						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
@@ -235,6 +239,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							if (sphereObject)
 							{
 								sphereObject->size = std::stof(token);
+								sphereObject->setBoundingBox();
 							}
 						}
 						break;

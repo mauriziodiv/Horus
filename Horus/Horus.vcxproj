@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\accelerator.cpp" />
+    <ClCompile Include="src\BxDF.cpp" />
     <ClCompile Include="src\Horus.cpp" />
     <ClCompile Include="src\hrs.cpp" />
     <ClCompile Include="src\output.cpp" />
@@ -34,6 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\accelerator.h" />
+    <ClInclude Include="headers\BxDF.h" />
     <ClInclude Include="headers\Horus.h" />
     <ClInclude Include="headers\hrs.h" />
     <ClInclude Include="headers\output.h" />
