@@ -516,6 +516,7 @@ int32_t BVH::flattenBVH(BVHNode* node, int32_t& offset)
 	}
 }
 
+// Creates the BVH nodes for each treelet. Returns true if successful, false otherwise.
 bool BVH::createNodes(std::vector<Treelet>& treelets)
 {
 	if (!treelets.empty())
