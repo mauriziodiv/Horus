@@ -101,6 +101,11 @@ public:
 		return Vector3D(-x, -y, -z);
 	}
 
+	Vector3D operator %(const Vector3D<T>& v) const
+	{
+		return Vector3D(x * v.x, y * v.y, z * v.z);
+	}
+
 	// Dot product
 	T operator*(const Vector3D<T>& v) const
 	{

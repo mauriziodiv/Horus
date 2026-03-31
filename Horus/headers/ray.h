@@ -4,6 +4,7 @@
 class Ray
 {
 	public:
+		Ray() : origin(0.0f, 0.0f, 0.0f), direction(0.0f, 0.0f, 1.0f) {}
 		Ray(Vector3D<float> origin, Vector3D<float> direction);
 		Vector3D<float> getPointat(float t);
 

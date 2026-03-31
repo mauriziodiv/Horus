@@ -32,4 +32,8 @@ class Scene {
 		RenderOutput renderOutput = RenderOutput::PPM;
 		Output output;
 		std::string_view filePathWrite;
+
+		UnitRandom unitRandom;
+
+		int32_t numberOfSamples = 10; //100
 };

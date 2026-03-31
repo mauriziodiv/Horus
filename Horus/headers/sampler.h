@@ -21,7 +21,7 @@ class Sampler
 {
 	public:
 		Sampler();
-		Vector3D<float> cosineWeightsampleHemisphere();
+		static Vector3D<float> cosineWeightSampleHemisphere(float r1, float r2);
 
 	private:
 		UnitRandom unitRandom;

@@ -145,7 +145,7 @@ void Scene::render()
 	float width = camera->getWidth();
 	float height = camera->getHeight();
 
-	Integrator integrator;
+	Integrator integrator(lights);
 
 	BVH bvh;
 	bvh.buildBVH(geometries);
@@ -157,11 +157,25 @@ void Scene::render()
 			float u = (float)j / (width - 1);
 			float v = (float)i / (height - 1);
 
-			//GeometryObject* closestHit = nullptr;
+			Vector3D<float> color(0.0f, 0.0f, 0.0f);
 
 			Ray ray(camera->genRay(u, v));
 
-			Vector3D<float> color = integrator.rayPath(ray, bvh, 0);
+			Ray originalRay = ray;
+
+			for (size_t k = 0; k < numberOfSamples; ++k)
+			{
+				float x = (originalRay.getDirection().x + (unitRandom.Generate() - 0.5f) / width);
+				float y = (originalRay.getDirection().y + (unitRandom.Generate() - 0.5f) / height);
+				float z = (originalRay.getDirection().z + (unitRandom.Generate() - 0.5f) / width);
+
+				ray.setDirection(Vector3D<float>(x, y, z));
+
+				color += integrator.rayPath(ray, bvh, 2);
+			}
+
+			color /= (float)numberOfSamples;
+
 			output.writeBuffer(color);
 		}
 	}

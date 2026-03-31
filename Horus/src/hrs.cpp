@@ -10,6 +10,10 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"height", ParameterType::HEIGHT},
 	{"radius", ParameterType::RADIUS},
 	{"intensity", ParameterType::INTENSITY},
+	{"color", ParameterType::COLOR},
+	{"diffuse_gain", ParameterType::DIFFUSE_GAIN},
+	{"diffuse_color", ParameterType::DIFFUSE_COLOR},
+	{"roughness", ParameterType::ROUGHNESS},
 	{"lat", ParameterType::LAT},
 	{"window", ParameterType::WINDOW},
 	{"shader", ParameterType::SHADER}
@@ -17,11 +21,15 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
 	{"constant", ShaderType::CONSTANT},
-	{"depth", ShaderType::DEPTH}
+	{"depth", ShaderType::DEPTH},
+	{"surface", ShaderType::SURFACE},
 };
 
 std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
-	{"color", ShaderParameterType::COLOR}
+	{"color", ShaderParameterType::COLOR},
+	{"diffuse_gain", ShaderParameterType::DIFFUSE_GAIN},
+	{"diffuse_color", ShaderParameterType::DIFFUSE_COLOR},
+	{"roughness", ShaderParameterType::ROUGHNESS}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -115,11 +123,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 							static_cast<GeometryObject*>(sceneObjects.back().get())->createMorton();
 						}
-
-						//if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY)
-						//{
-						//	static_cast<GeometryObject*>(sceneObjects.back().get())->setBoundingBox();
-						//}
 					}
 					break;
 
@@ -228,6 +231,29 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 					}
 					break;
 
+				case ParameterType::COLOR:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back().get());
+
+						if (lightObject)
+						{
+							std::stringstream s(token);
+
+							float x, y, z;
+							char comma;
+
+							s >> x >> comma >> y >> comma >> z;
+
+							lightObject->setColor(Vector3D<float>(x, y, z));
+						}
+					}
+
+					break;
+
 				case ParameterType::RADIUS:
 
 						tokenSearch(file, '/', token);
@@ -256,6 +282,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						char comma;
 
 						s >> x >> comma >> y >> comma >> z;
+
 						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back().get());
 
 						if (cameraObject)
@@ -324,7 +351,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 
 	std::unordered_map<std::string, LightType> LightObjectsMap =
 	{
-		{ "point", LightType::POINT }
+		{ "point", LightType::POINT },
+		{ "dome", LightType::DOME }
 	};
 
 	std::unordered_map<std::string, CameraType> CameraObjectsMap =
@@ -376,6 +404,12 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 					case LightType::POINT:
 						// Create a point light object
 						sceneObjects.emplace_back(std::make_unique<PointLightObject>(1.0f));
+						setObjectParameters(file, token, sceneObjects);
+						break;
+
+					case LightType::DOME:
+						// Create a dome light object
+						sceneObjects.emplace_back(std::make_unique<DomeLightObject>());
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}
@@ -438,6 +472,10 @@ bool GeometryObject::assignShader(ShaderType sType)
 			shader = Depth();
 			return true;
 
+			case ShaderType::SURFACE:
+			shader = Surface();
+			return true;
+
 		default:
 			break;
 	}
@@ -449,7 +487,7 @@ bool GeometryObject::parse()
 {
 	token.clear();
 
-	while (!shaderFile.eof() || shaderFile.peek() != ';')
+	while (!shaderFile.eof() && shaderFile.peek() != ';')
 	{
 		if (shaderFile.peek() == '(')
 		{
@@ -515,10 +553,94 @@ bool GeometryObject::parse()
 						}
 						return false;
 
+					case ShaderType::SURFACE:
+						if (assignShader(sType))
+						{
+							token.clear();
+
+							while (!shaderFile.eof() && shaderFile.peek() != ';')
+							{
+								tokenSearch(shaderFile, '-', token);
+
+								ShaderParameterType spType;
+
+								if (shaderParameterMap.find(token) != shaderParameterMap.end())
+								{
+									spType = shaderParameterMap[token];
+
+									switch (spType)
+									{
+									case ShaderParameterType::DIFFUSE_GAIN:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setDiffuseGain(std::stof(token));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::DIFFUSE_COLOR:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												std::stringstream s(token);
+
+												float x, y, z;
+												char comma;
+
+												s >> x >> comma >> y >> comma >> z;
+
+												p->setDiffuseColor(Vector3D<float>(x, y, z));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::ROUGHNESS:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setRoughness(std::stof(token));
+											}
+										}
+
+										break;
+
+									default:
+										return false;
+									}
+								}
+							}
+
+							return true;
+						}
+
+						return false;
+
 					default:
 						return false;
 				}
 			}
+		}
+		else
+		{
+			shaderFile.get();
 		}
 	}
 	return false;

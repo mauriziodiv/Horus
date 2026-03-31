@@ -8,6 +8,7 @@
 #include "vec_math.h"
 #include "ray.h"
 #include "shader.h"
+#include "BxDF.h"
 
 struct Morton
 {
@@ -122,11 +123,15 @@ inline BoundingBox operator+(const BoundingBox& a, const BoundingBox& b)
 
 enum class ShaderType {
 	CONSTANT,
-	DEPTH
+	DEPTH,
+	SURFACE
 };
 
 enum class ShaderParameterType {
-	COLOR
+	COLOR,
+	DIFFUSE_GAIN,
+	DIFFUSE_COLOR,
+	ROUGHNESS,
 };
 
 struct HitRecord
@@ -146,6 +151,10 @@ enum class ParameterType {
 	HEIGHT,
 	RADIUS,
 	INTENSITY,
+	COLOR,
+	DIFFUSE_GAIN,
+	DIFFUSE_COLOR,
+	ROUGHNESS,
 	LAT,
 	WINDOW,
 	SHADER
@@ -165,7 +174,8 @@ enum class GeometryType {
 };
 
 enum class LightType {
-	POINT
+	POINT,
+	DOME
 };
 
 enum class CameraType {
@@ -246,7 +256,7 @@ class GeometryObject : public SceneObject {
 
 		bool linkShader(std::string& shaderFilePath);
 
-		std::variant<Shader, Constant, Depth>& getShader() { return shader; }
+		std::variant<Shader, Constant, Depth, Surface>& getShader() { return shader; }
 
 		bool getHitRecordFront() { return hitRecord.front; }
 		bool getHitRecordBack() { return hitRecord.back; }
@@ -267,7 +277,7 @@ class GeometryObject : public SceneObject {
 
 		std::string token;
 
-		std::variant<Shader, Constant, Depth> shader;
+		std::variant<Shader, Constant, Depth, Surface> shader;
 
 		bool parse();
 
@@ -284,7 +294,8 @@ class GeometryObject : public SceneObject {
 class SphereObject : public GeometryObject {
 
 	public:
-		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE) { GeometryObject::size = r; setBoundingBox(); }
+
+		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE), normal(0.0f, 0.0f, 0.0f) { GeometryObject::size = r; setBoundingBox(); }
 		
 		std::string_view getObjectName() override
 		{
@@ -300,6 +311,17 @@ class SphereObject : public GeometryObject {
 			boundingBox.setMax(mx);
 
 			boundingBox.computeCentroid();
+		}
+
+		virtual void computeNormal() override
+		{
+			normal = hitRecord.hitPoint - position;
+			normal.normalize();
+		}
+
+		virtual Vector3D<float> getNormal() override
+		{
+			return normal;
 		}
 
 		virtual void printProperties() override
@@ -353,6 +375,9 @@ class SphereObject : public GeometryObject {
 		}
 
 	private:
+
+		Vector3D<float> normal;
+
 		static constexpr const char name[] = "Sphere";
 };
 
@@ -456,7 +481,8 @@ class PlaneObject : public GeometryObject {
 // Derived classes for specific scene objects
 class LightObject : public SceneObject {
 	public:
-		LightObject(LightType lType) : SceneObject(SceneObjectType::LIGHT), lightType(lType) {}
+
+		LightObject(LightType lType) : SceneObject(SceneObjectType::LIGHT), lightType(lType), color(0.0f, 0.0f, 0.0f) {}
 
 		LightType getLightType()
 		{
@@ -483,6 +509,16 @@ class LightObject : public SceneObject {
 			return intensity;
 		}
 
+		void setColor(Vector3D<float> col)
+		{
+			color = col;
+		}
+
+		Vector3D<float> getColor()
+		{
+			return color;
+		}
+
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
@@ -494,12 +530,16 @@ class LightObject : public SceneObject {
 		float intensity;
 
 	private:
+
 		LightType lightType;
+
+		Vector3D<float> color;
 		
 };
 
 class PointLightObject : public LightObject {
 	public:
+
 		PointLightObject(float i) : LightObject(LightType::POINT) { LightObject::setSize(1.0f); }
 
 		std::string_view getObjectName() override
@@ -514,14 +554,33 @@ class PointLightObject : public LightObject {
 		}
 
 	private:
+
 		static constexpr const char name[] = "Point Light";
+};
+
+class DomeLightObject : public LightObject {
+	
+	public:
+
+		DomeLightObject() : LightObject(LightType::DOME) {  }
+
+		std::string_view getObjectName() override
+		{
+			return name;
+		}
+
+	private:
+
+		static constexpr const char name[] = "Dome Light";
 };
 
 // CAMERA ###############################################
 
 // Derived classes for specific scene objects
 class CameraObject : public SceneObject {
+
 	public:
+
 		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float>(0.0f, 0.0f, 0.0f)), focal_length(1.0f), width(200.0f), height(100.0f)
 		{
 			
