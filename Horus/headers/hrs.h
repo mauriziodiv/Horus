@@ -410,10 +410,16 @@ class PlaneObject : public GeometryObject {
 			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
 			
 			Vector3D<float> corners[4] = {
-				Vector3D<float> (-width * 0.5, -height * 0.5, 0.0f),
-				Vector3D<float>(width * 0.5, height * 0.5, 0.0f),
-				Vector3D<float>(-width * 0.5, height * 0.5, 0.0f),
-				Vector3D<float>(width * 0.5, -height * 0.5, 0.0f)
+
+				//Vector3D<float>(-width * 0.5, -height * 0.5, 0.0f),
+				//Vector3D<float>(width * 0.5, height * 0.5, 0.0f),
+				//Vector3D<float>(-width * 0.5, height * 0.5, 0.0f),
+				//Vector3D<float>(width * 0.5, -height * 0.5, 0.0f)
+
+				Vector3D<float> (-width * 0.5, 0.0f, -height * 0.5),
+				Vector3D<float>(width * 0.5, 0.0f, height * 0.5),
+				Vector3D<float>(-width * 0.5, 0.0f, height * 0.5),
+				Vector3D<float>(width * 0.5, 0.0f, -height * 0.5)
 			};
 			
 			//Vector3D<float> pc(- width * 0.5, -height * 0.5, 0.0f);
@@ -448,7 +454,13 @@ class PlaneObject : public GeometryObject {
 			{
 				Vector3D<float> hitPoint = ray.getPointat(t);
 
-				if (hitPoint > min && hitPoint < max)
+				Vector3D<float> d = hitPoint - position;
+
+				float lx = R.getValue(0, 0) * d.x + R.getValue(1, 0) * d.y + R.getValue(2, 0) * d.z;
+				float lz = R.getValue(0, 2) * d.x + R.getValue(1, 2) * d.y + R.getValue(2, 2) * d.z;
+
+				//if (hitPoint > min && hitPoint < max)
+				if (fabs(lx) <= width * 0.5f && fabs(lz) <= height * 0.5f)
 				{
 					hitRecord.front = true;
 					hitRecord.back = false;
@@ -471,6 +483,8 @@ class PlaneObject : public GeometryObject {
 		Vector3D<float> max;
 
 		Vector3D<float> normal;
+
+		Matrix4X4<float> R;
 
 		static constexpr const char name[] = "Plane";
 

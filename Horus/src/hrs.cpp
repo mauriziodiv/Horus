@@ -665,10 +665,30 @@ PlaneObject::PlaneObject() : GeometryObject(GeometryType::PLANE)
 
 void PlaneObject::computeNormal()
 {
-	min = Vector3D<float>(position.x - (width * 0.5), position.y - (height * 0.5), position.z - (height * 0.5));
-	max = Vector3D<float>(position.x + (width * 0.5), position.y + (height * 0.5), position.z + (height * 0.5));
+	//min = Vector3D<float>(position.x - (width * 0.5), position.y - (height * 0.5), position.z - (height * 0.5));
+	//max = Vector3D<float>(position.x + (width * 0.5), position.y + (height * 0.5), position.z + (height * 0.5));
 
-	Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+	//Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+	this->R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+	//normal = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
+	normal = this->R * Vector3D<float>(0.0f, 1.0f, 0.0f);
+	//Vector3D<float> corners[4] = { Vector3D<float>(-width * 0.5f, 0.0f, -height * 0.5f), Vector3D<float>(width * 0.5f, 0.0f,  height * 0.5f), Vector3D<float>(-width * 0.5f, 0.0f,  height * 0.5f), Vector3D<float>(width * 0.5f, 0.0f, -height * 0.5f)};
 
-	normal = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
+	//min = position + (R * corners[0]);
+	//max = min;
+
+	//for (int i = 1; i < 4; ++i)
+	//{
+	//	Vector3D<float> c = position + (R * corners[i]);
+	//	if (c.x < min.x) min.x = c.x;
+	//	if (c.y < min.y) min.y = c.y;
+	//	if (c.z < min.z) min.z = c.z;
+	//	if (c.x > max.x) max.x = c.x;
+	//	if (c.y > max.y) max.y = c.y;
+	//	if (c.z > max.z) max.z = c.z;
+	//}
+
+	//const float epsilon = 0.001f;
+	//min -= Vector3D<float>(epsilon, epsilon, epsilon);
+	//max += Vector3D<float>(epsilon, epsilon, epsilon);
 }
