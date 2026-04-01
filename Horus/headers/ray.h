@@ -28,6 +28,13 @@ class Ray
 			return direction;
 		}
 
+		void reflect(Vector3D<float>& refVector)
+		{
+			refVector.normalize();
+				
+			direction = direction - ((refVector * (direction * refVector)) * 2.0f);
+		}
+
 		void setTMin(float tmin)
 		{
 			tMin = tmin;

@@ -18,5 +18,5 @@ class Integrator
 		std::vector<LightObject*> lights;
 		UnitRandom unitRandom;
 
-		Vector3D<float> toWorld(Vector3D<float> v, Vector3D<float> normal);
+		Vector3D<float> toWorld(Vector3D<float> v, Vector3D<float> refVector);
 };
