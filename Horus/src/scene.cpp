@@ -4,6 +4,10 @@ std::unordered_map<std::string_view, RenderOutput> renderOutputMap = {
 	{ "ppm", RenderOutput::PPM }
 };
 
+std::unordered_map<std::string_view, GammaCorrection> gammaCorrectionMap = {
+	{"gamma2", GammaCorrection::GAMMA2}
+};
+
 Scene::Scene() : sceneObjects(), camera(nullptr), geometries(), lights(), renderOutput(RenderOutput::PPM), output(), filePathWrite()
 {
 
@@ -113,6 +117,21 @@ bool Scene::setRenderOutput(const std::string_view& ro)
 	return true;
 }
 
+bool Scene::setGammaCorrection(const std::string_view gc)
+{
+	std::string_view par = (gc.front() == '-') ? gc.substr(1) : gc;
+
+	if (gammaCorrectionMap.find(par) == gammaCorrectionMap.end())
+	{
+		return false;
+	}
+
+	gammaCorrection = gammaCorrectionMap[par];
+	gammaCorrectionSet = true;
+
+	return true;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -171,10 +190,25 @@ void Scene::render()
 
 				ray.setDirection(Vector3D<float>(x, y, z));
 
-				color += integrator.rayPath(ray, bvh, 0);
+				color += integrator.rayPath(ray, bvh, 2);
 			}
 
 			color /= (float)numberOfSamples;
+
+			if (gammaCorrectionSet)
+			{
+				switch (gammaCorrection)
+				{
+					case GammaCorrection::GAMMA2:
+						color.x = std::sqrt(color.x);
+						color.y = std::sqrt(color.y);
+						color.z = std::sqrt(color.z);
+						break;
+
+					default:
+						break;
+				}
+			}
 
 			output.writeBuffer(color);
 		}

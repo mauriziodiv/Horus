@@ -65,6 +65,15 @@ int main(int argc, char* argv[])
 
 	if (!scene.setFilePathWrite(inputDescription[2])) { return 1; }
 
+	// Set gamma correction option if provided
+	if (inputDescription.size() > 3 && !inputDescription[3].empty())
+	{
+		if (!scene.setGammaCorrection(inputDescription[3]))
+		{
+			std::cout << "Invalid gamma correction option!" << std::endl;
+		}
+	}
+
 	// Get scene from scene objects
 	if (!scene.getScene(sceneObjects)) { return 1; }
 

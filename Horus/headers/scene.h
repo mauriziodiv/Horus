@@ -4,6 +4,11 @@
 #include "render.h"
 #include "accelerator.h"
 
+enum class GammaCorrection
+{
+	GAMMA2
+};
+
 class Scene {
 
 	public:
@@ -14,6 +19,8 @@ class Scene {
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
 		std::vector<LightObject*> getLights() { return lights; }
 		bool setRenderOutput(const std::string_view& ro);
+		bool setGammaCorrection(const std::string_view gc);
+		bool getGammaCorrectionSet() { return gammaCorrectionSet; }
 		RenderOutput getRenderOutput() { return renderOutput; }
 		void render();
 		bool setFilePathWrite(const std::string_view& path);
@@ -34,6 +41,9 @@ class Scene {
 		std::string_view filePathWrite;
 
 		UnitRandom unitRandom;
+
+		bool gammaCorrectionSet = false;
+		GammaCorrection gammaCorrection = GammaCorrection::GAMMA2;
 
 		int32_t numberOfSamples = 10; //100
 };
