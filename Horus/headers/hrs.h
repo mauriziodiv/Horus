@@ -132,6 +132,8 @@ enum class ShaderParameterType {
 	DIFFUSE_GAIN,
 	DIFFUSE_COLOR,
 	ROUGHNESS,
+	REFRACTION_GAIN,
+	IOR
 };
 
 struct HitRecord

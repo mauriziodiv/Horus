@@ -23,6 +23,12 @@ Vector3D<float> Integrator::toWorld(Vector3D<float> v, Vector3D<float> refVector
 	return worldVec;
 }
 
+void Integrator::reflect(Vector3D<float> hp, Vector3D<float> normal, Vector3D<float> refDir, BVH& bvh, int nBounces, float refGain, Vector3D<float>& col)
+{
+	Ray newRay(hp + (normal * 0.001f), refDir);
+	col += rayPath(newRay, bvh, nBounces - 1) * refGain;
+}
+
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
 Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 {
@@ -61,11 +67,17 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 			Vector3D<float> diffuseColor(1.0f, 1.0f, 1.0f);
 			float roughness = 1.0f;
 
+			float refraction_gain = 0.0f;
+			float IOR = 1.0f;
+
 			if (auto surface = std::get_if<Surface>(&shader))
 			{
 				diffuseGain = surface->getDiffuseGain();
 				diffuseColor = surface->getDiffuseColor();
 				roughness = surface->getRoughness();
+
+				refraction_gain = surface->getRefractionGain();
+				IOR = surface->getIOR();
 			}
 
 			// create new ray from hit point
@@ -78,15 +90,76 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 			float r1 = unitRandom.Generate();
 			float r2 = unitRandom.Generate();
 
-			Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
+			float epsilon = 0.001f;
 
-			Vector3D<float> diffuseScatter = toWorld(rndDir, closestHit->getNormal());
+			// if refractionGain > 0.0f
 
-			Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
+			if (refraction_gain > 0.0f)
+			{
+			//	Refraction
+			//	Determine which side the ray is on and set up accordingly
+				Vector3D<float> dir = ray.getDirection(); // hitPoint - ray.getOrigin();
+				dir.normalize();
+				float d = dir * normal;
+
+				float ratio;
 			
-			Ray newRay(hitPoint, finalScatter);
+				if (d < 0.0f) //if d · n̂ < 0
+				{
+					ratio = 1.0f / IOR;
+					//	n̂ stays as - is
+				}
+				else
+				{
+					ratio = IOR / 1.0f;
+					normal = -normal; //	n̂ = −n̂
+				}
+				// Step 1: Check for total internal reflection
+				float cos_i = - (dir * normal);
+				
+				float k = 1.0f - ratio * ratio * (1.0f - cos_i * cos_i); //	k = 1 − η² ·(1 − cos_i²)
 
-			color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1)) * diffuseGain;
+				if (k < 0.0f)//	if k < 0
+				{
+					// reflect()
+					reflect(hitPoint, normal, reflectedDir, bvh, nBounces, refraction_gain, color);
+				}
+				else
+				{
+					// Step 2: Fresnel via Schlick
+					float cos_schlick = (ratio > 1.0f) ? std::sqrt(k) : cos_i;
+
+					float F_0 = ((1.0f - IOR) / (1.0f + IOR)) * ((1.0f - IOR) / (1.0f + IOR)); // F₀ = ((n₁ − n₂) / (n₁ + n₂))²
+					float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f); // F = F₀ + (1 − F₀)(1 − cos_i)⁵
+
+					//	 Step 3: Stochastic branch
+					if ( unitRandom.Generate() < F) // if unitRandom.Generate() < F
+					{
+						// reflect()
+						//Ray newRay(hitPoint + (normal * 0.001f), reflectedDir);
+						//color += rayPath(newRay, bvh, nBounces - 1) * refraction_gain;
+						reflect(hitPoint, normal, reflectedDir, bvh, nBounces, refraction_gain, color);
+					}
+					else
+					{
+					     //	refract()
+						Ray refracted = ray;
+						refracted.setOrigin(hitPoint - (normal * epsilon));
+						refracted.refract(dir, normal, k, cos_i, ratio);
+						color += rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
+					}
+				}
+			}
+			else
+			{
+				Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
+				Vector3D<float> diffuseScatter = toWorld(rndDir, closestHit->getNormal());
+				Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
+
+				Ray newRay(hitPoint + (normal * epsilon), finalScatter);
+
+				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1)) * diffuseGain;
+			}
 		}
 	}
 	else

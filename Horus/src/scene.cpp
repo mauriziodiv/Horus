@@ -190,7 +190,7 @@ void Scene::render()
 
 				ray.setDirection(Vector3D<float>(x, y, z));
 
-				color += integrator.rayPath(ray, bvh, 2);
+				color += integrator.rayPath(ray, bvh, 5);
 			}
 
 			color /= (float)numberOfSamples;

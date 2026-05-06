@@ -35,6 +35,20 @@ class Ray
 			direction = direction - ((refVector * (direction * refVector)) * 2.0f);
 		}
 
+		void refract(Vector3D<float>& refVector, Vector3D<float> normal, float k, float cos_01,float ratio)
+		{
+			// Step 4: Compute refracted direction
+
+			//float k = 1.0f - ((ratio * ratio) * (1.0f - (cos_01 * cos_01)));
+
+			refVector.normalize();
+			normal.normalize();
+
+			Vector3D<float> t_perp = (refVector + (normal * cos_01)) * ratio; //t⊥ = η ·(d + cos_i · n̂)
+			Vector3D<float> t_horizontal = -(normal * std::sqrt(k)); //t_horizontal = -(std::sqrt());//	t‖ = −√k · n̂
+			direction = t_perp + t_horizontal; //	t = t⊥ + t
+		}
+
 		void setTMin(float tmin)
 		{
 			tMin = tmin;

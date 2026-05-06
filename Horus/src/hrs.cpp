@@ -29,7 +29,9 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"color", ShaderParameterType::COLOR},
 	{"diffuse_gain", ShaderParameterType::DIFFUSE_GAIN},
 	{"diffuse_color", ShaderParameterType::DIFFUSE_COLOR},
-	{"roughness", ShaderParameterType::ROUGHNESS}
+	{"roughness", ShaderParameterType::ROUGHNESS},
+	{"refraction_gain", ShaderParameterType::REFRACTION_GAIN},
+	{"ior", ShaderParameterType::IOR}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -617,6 +619,36 @@ bool GeometryObject::parse()
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
 												p->setRoughness(std::stof(token));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::REFRACTION_GAIN:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setRefractionGain(std::stof(token));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::IOR:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setIOR(std::stof(token));
 											}
 										}
 
