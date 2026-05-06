@@ -150,15 +150,16 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 					}
 				}
 			}
-			else
+			if (refraction_gain < 1.0f)
 			{
 				Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
-				Vector3D<float> diffuseScatter = toWorld(rndDir, closestHit->getNormal());
+				Vector3D<float> surfaceNormal = closestHit->getNormal();
+				Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
 				Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
 
-				Ray newRay(hitPoint + (normal * epsilon), finalScatter);
+				Ray newRay(hitPoint + (surfaceNormal * epsilon), finalScatter);
 
-				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1)) * diffuseGain;
+				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1)) * diffuseGain * (1.0f - refraction_gain);
 			}
 		}
 	}
