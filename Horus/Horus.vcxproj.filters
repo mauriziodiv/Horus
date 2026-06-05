@@ -54,6 +54,9 @@
     <ClCompile Include="src\BxDF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\triangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\Horus.h">
@@ -93,6 +96,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\BxDF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
