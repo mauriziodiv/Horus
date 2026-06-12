@@ -38,8 +38,8 @@ Shader types: `constant`, `depth`, `surface`.
 - **HitRecord lives on GeometryObject** — `hitRecord` is a member of `GeometryObject`, not returned by value. This makes traversal non-thread-safe as-is.
 - **Normal is NOT in HitRecord** — after a hit, call `geometry->computeNormal()` then `geometry->getNormal()` explicitly; do not assume the normal is set.
 - **Shader dispatch via `std::variant`** — shaders are stored as `std::variant<Shader, Constant, Depth, Surface>` and dispatched with `std::visit` in `rayPath()`. Do not add virtual methods to the shader hierarchy; extend the variant instead.
-- **Scatter blend formula**: `finalScatter = reflectedDir * (1 - roughness) + diffuseScatter * roughness`
-- **`refractionGain` and `IOR` are parsed and stored but not yet used** in scatter logic — refraction is the next feature to implement.
+- **Scatter blend formula** (diffuse/specular path, when `refractionGain == 0`): `finalScatter = reflectedDir * (1 - roughness) + diffuseScatter * roughness`
+- **Refraction uses Schlick Fresnel** — when `refractionGain > 0`, `rayPath()` stochastically chooses reflection (probability F) or refraction (probability 1-F) via the Schlick approximation; total internal reflection falls back to pure reflection.
 - **`PlaneObject` bounding box** is padded with epsilon=0.001 to avoid degenerate slab test in BVH.
 
 ## Code Style
