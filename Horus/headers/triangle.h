@@ -2,6 +2,7 @@
 #include <vector>
 #include "vec_math.h"
 #include "ray.h"
+#include "hrs.h"
 
 class TriangleMesh
 {
@@ -21,14 +22,14 @@ class TriangleMesh
 	private:
 };
 
-class Triangle
+class Triangle : public GeometryObject
 {
 	public:
 		Triangle();
 
 		void findVertices(int mIndex, int tIndex);
 
-		bool rayIntersection(Ray &ray);
+		virtual bool rayIntersection(Ray &ray, float tMin, float tMax) override;
 
 		int meshIndex;
 		int triangleIndex;
@@ -37,5 +38,15 @@ class Triangle
 
 		Vector3D<float> vertices[3];
 
+		virtual void setBoundingBox() override;
+		virtual void computeNormal() override;
+		virtual Vector3D<float> getNormal() override;
+
+		std::string_view getObjectName() override { return name; }
+
 	private:
+		float epsilon = 0.001f;
+		
+		Vector3D<float> normal;
+		static constexpr const char name[] = "Triangle";
 };

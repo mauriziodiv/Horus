@@ -172,7 +172,8 @@ enum class SceneObjectType {
 
 enum class GeometryType {
 	SPHERE,
-	PLANE
+	PLANE,
+	TRIANGLE
 };
 
 enum class LightType {

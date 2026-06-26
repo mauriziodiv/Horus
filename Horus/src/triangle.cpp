@@ -2,7 +2,7 @@
 
 std::vector<const TriangleMesh*>* Triangle::allMeshes = nullptr;
 
-Triangle::Triangle()
+Triangle::Triangle() : GeometryObject(GeometryType::TRIANGLE)
 {
 	meshIndex = -1;
 	triangleIndex = -1;
@@ -18,7 +18,7 @@ void Triangle::findVertices(int mIndex, int tIndex)
 	vertices[2] = mesh->vertex[vertexIndex[2]];
 }
 
-bool Triangle::rayIntersection(Ray& ray)
+bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
 {
 	// Move the ray to the origin
 	Ray originRay;
@@ -98,10 +98,51 @@ bool Triangle::rayIntersection(Ray& ray)
 
 	float t = num * invDet;
 
-	if (t < ray.getTMin() || t > ray.getTMax())
+	//if (t < ray.getTMin() || t > ray.getTMax())
+	//{
+	//	return false;
+	//}
+
+	if (t < tMin || t > tMax)
 	{
 		return false;
 	}
 
+	hitRecord.t = t;
+	hitRecord.hitPoint = ray.getPointat(t);
+	hitRecord.front = (det > 0);
+	hitRecord.back = (det < 0);
+
 	return true;
+}
+
+void Triangle::setBoundingBox()
+{
+	float x_min = std::min(std::min(vertices[0].x, vertices[1].x), vertices[2].x);
+	float x_max = std::max(std::max(vertices[0].x, vertices[1].x), vertices[2].x);
+
+	float y_min = std::min(std::min(vertices[0].y, vertices[1].y), vertices[2].y);
+	float y_max = std::max(std::max(vertices[0].y, vertices[1].y), vertices[2].y);
+
+	float z_min = std::min(std::min(vertices[0].z, vertices[1].z), vertices[2].z);
+	float z_max = std::max(std::max(vertices[0].z, vertices[1].z), vertices[2].z);
+
+	boundingBox.setMin(Vector3D<float>(x_min - epsilon, y_min - epsilon, z_min - epsilon));
+	boundingBox.setMax(Vector3D<float>(x_max + epsilon, y_max + epsilon, z_max + epsilon));
+
+	boundingBox.computeCentroid();
+}
+
+void Triangle::computeNormal()
+{
+	Vector3D<float> edge_01 = vertices[1] - vertices[0];
+	Vector3D<float> edge_02 = vertices[2] - vertices[0];
+	
+	normal = edge_01 | edge_02;
+	normal.normalize();
+}
+
+Vector3D<float> Triangle::getNormal()
+{
+	return normal;
 }
