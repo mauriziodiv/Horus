@@ -8,14 +8,22 @@ Triangle::Triangle() : GeometryObject(GeometryType::TRIANGLE)
 	triangleIndex = -1;
 }
 
-void Triangle::findVertices(int mIndex, int tIndex)
-{
-	const TriangleMesh* mesh = (*allMeshes)[mIndex];
-	const int* vertexIndex = mesh->vertexIndices + (tIndex * 3);
+//Triangle::Triangle(int mIndex, int tIndex)
+//{
+//
+//}
 
-	vertices[0] = mesh->vertex[vertexIndex[0]];
-	vertices[1] = mesh->vertex[vertexIndex[1]];
-	vertices[2] = mesh->vertex[vertexIndex[2]];
+Triangle::Triangle(const TriangleMesh* mesh, int tIndex) : GeometryObject(GeometryType::TRIANGLE)
+{
+	//const TriangleMesh* mesh = (*allMeshes)[mIndex];
+
+	int i01 = mesh->vertexIndices[tIndex * 3];
+	int i02 = mesh->vertexIndices[(tIndex * 3) + 1];
+	int i03 = mesh->vertexIndices[(tIndex * 3) + 2];
+
+	vertices[0] = mesh->vertex[i01];
+	vertices[1] = mesh->vertex[i02];
+	vertices[2] = mesh->vertex[i03];
 }
 
 bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)

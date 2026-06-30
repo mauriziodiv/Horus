@@ -23,6 +23,7 @@
     <ClCompile Include="src\BxDF.cpp" />
     <ClCompile Include="src\Horus.cpp" />
     <ClCompile Include="src\hrs.cpp" />
+    <ClCompile Include="src\mesh.cpp" />
     <ClCompile Include="src\output.cpp" />
     <ClCompile Include="src\ray.cpp" />
     <ClCompile Include="src\render.cpp" />
@@ -39,6 +40,7 @@
     <ClInclude Include="headers\BxDF.h" />
     <ClInclude Include="headers\Horus.h" />
     <ClInclude Include="headers\hrs.h" />
+    <ClInclude Include="headers\mesh.h" />
     <ClInclude Include="headers\output.h" />
     <ClInclude Include="headers\ray.h" />
     <ClInclude Include="headers\render.h" />
@@ -134,12 +136,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(ProjectDir)..\..\RealObj\RealObj\headers</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\RealObj\x64\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);RealObj.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

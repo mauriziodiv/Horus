@@ -7,15 +7,16 @@
 class TriangleMesh
 {
 	public:
+		TriangleMesh() : nVertices(0), nTriangles(0) {}
 		
 		int nTriangles;
 		int nVertices;
 
-		const int* vertexIndices = nullptr;
+		std::vector<int> vertexIndices;
 
-		const Vector3D<float> *vertex = nullptr;
-		const Vector3D<float> *vertexNormal = nullptr;
-		const Vector3D<float> *vertexUV = nullptr;
+		std::vector<Vector3D<float>> vertex;
+		std::vector<Vector3D<float>> vertexNormal;
+		std::vector<Vector3D<float>> vertexUV;
 
 		bool reverseOrientation, transformSwapsHandedness;
 
@@ -26,8 +27,9 @@ class Triangle : public GeometryObject
 {
 	public:
 		Triangle();
+		Triangle(const TriangleMesh* mesh, int tIndex);
 
-		void findVertices(int mIndex, int tIndex);
+		//void findVertices(int mIndex, int tIndex);
 
 		virtual bool rayIntersection(Ray &ray, float tMin, float tMax) override;
 
