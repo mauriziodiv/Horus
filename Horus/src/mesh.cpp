@@ -23,7 +23,7 @@ Vector3D<float> Mesh::VecToVector(Vec3D v)
 	return vector3D;
 }
 
-bool Mesh::copy_vertices()
+bool Mesh::getData()
 {
 	triangleMesh.vertexIndices.reserve(objMesh.getVertexIndices().size());
 	triangleMesh.vertex.reserve(objMesh.getVertices().size());
@@ -41,5 +41,17 @@ bool Mesh::copy_vertices()
 	
 	triangleMesh.nTriangles = static_cast<int>(triangleMesh.vertexIndices.size() / 3);
 
-	return false;
+	return true;
+}
+
+void Mesh::buildTriangles()
+{
+	triangles.clear();
+	triangles.reserve(triangleMesh.nTriangles);
+
+	for (int i = 0; i < triangleMesh.nTriangles; i++)
+	{
+		triangles.emplace_back(&triangleMesh, i);
+		triangles.back().setBoundingBox();
+	}
 }

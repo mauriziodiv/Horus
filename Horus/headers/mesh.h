@@ -11,13 +11,13 @@ class Mesh : public GeometryObject
 		Mesh();
 
 		bool importObj(const char* filename);
-
-		bool copy_vertices();
+		bool getData();
+		void buildTriangles();
 
 	private:
 		ObjMesh objMesh;
 		TriangleMesh triangleMesh;
+		std::vector<Triangle> triangles;
 
 		Vector3D<float> VecToVector(Vec3D v);
-
 };
