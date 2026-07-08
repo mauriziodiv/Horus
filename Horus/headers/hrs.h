@@ -159,7 +159,8 @@ enum class ParameterType {
 	ROUGHNESS,
 	LAT,
 	WINDOW,
-	SHADER
+	SHADER,
+	GEOMETRY
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -268,6 +269,10 @@ class GeometryObject : public SceneObject {
 		void createMorton() { morton.code = computeMorton(boundingBox.getCentroid()); }
 
 		Morton getMorton() { return morton; }
+
+		virtual bool loadGeometry(const char* filename) { return false; }
+
+		virtual std::vector<GeometryObject*> getTriangles() { return { this}; }
 
 		float size;
 		HitRecord hitRecord;

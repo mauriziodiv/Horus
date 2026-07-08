@@ -1,6 +1,7 @@
 #include "hrs.h"
 #include <fstream>
 #include <sstream>
+#include "mesh.h"
 
 std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"pos", ParameterType::POSITION},
@@ -16,7 +17,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"roughness", ParameterType::ROUGHNESS},
 	{"lat", ParameterType::LAT},
 	{"window", ParameterType::WINDOW},
-	{"shader", ParameterType::SHADER}
+	{"shader", ParameterType::SHADER},
+	{"geometry", ParameterType::GEOMETRY}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -330,6 +332,18 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						}
 					}
 					break;
+
+				case ParameterType::GEOMETRY:
+					tokenSearch(file, '/', token);
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
+						if (geometryObject)
+						{
+							geometryObject->loadGeometry(token.c_str());
+						}
+					}
+					break;
 				}
 		}
 		else if (!token.empty())
@@ -348,7 +362,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 	std::unordered_map<std::string, GeometryType> GeometryObjectsMap = 
 	{
 		{ "sphere", GeometryType::SPHERE },
-		{ "plane", GeometryType::PLANE }
+		{ "plane", GeometryType::PLANE },
+		{ "mesh", GeometryType::MESH }
 	};
 
 	std::unordered_map<std::string, LightType> LightObjectsMap =
@@ -394,6 +409,13 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 						sceneObjects.emplace_back(std::make_unique<PlaneObject>());
 						setObjectParameters(file, token, sceneObjects);
 						break;
+					
+					case GeometryType::MESH:
+						// Create a mesh object
+						sceneObjects.emplace_back(std::make_unique<Mesh>());
+						setObjectParameters(file, token, sceneObjects);
+						break;
+
 				}
 			}
 

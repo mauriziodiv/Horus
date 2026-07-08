@@ -15,12 +15,15 @@ Configurations: `Debug|x64` (development) and `Release|x64` (performance). C++17
 ## Running
 
 ```
-Horus.exe <scene_file> PPM <output.ppm> [GAMMA2]
+Horus.exe <scene_file> ppm <output.ppm> [gamma2]
 ```
 
-- `<scene_file>` — path to a scene description file (custom text format, see below)
-- `PPM` — only supported output format
-- `[GAMMA2]` — optional; applies sqrt-based gamma correction (gamma = 2)
+- `<scene_file>` — path to a scene description file (custom text format, see below); can live anywhere on disk, passed through as-is
+- `ppm` — only supported output format; lowercase, case-sensitive
+- `<output.ppm>` — output file path
+- `[gamma2]` — optional; applies sqrt-based gamma correction (gamma = 2); lowercase, case-sensitive
+
+The `ppm`, `<output.ppm>`, and `gamma2` arguments each accept an optional leading `-` (e.g. `-ppm`, `-C:\path\to\output.ppm`, `-gamma2`) which is stripped before matching — the scene file argument does not take a leading dash.
 
 ## Validation
 
