@@ -68,7 +68,17 @@ bool Scene::geometriesCheck()
 	{
 		if (geo->getType() == SceneObjectType::GEOMETRY)
 		{
-			geometries.push_back(static_cast<GeometryObject*>(geo.get()));
+			GeometryObject* geometryObject = static_cast<GeometryObject*>(geo.get());
+
+			if (geometryObject->getGeometryType() == GeometryType::MESH)
+			{
+				std::vector<GeometryObject*> triangles = geometryObject->getTriangles();
+				geometries.insert(geometries.end(), triangles.begin(), triangles.end());
+			}
+			else
+			{
+				geometries.push_back(geometryObject);
+			}
 		}
 	}
 

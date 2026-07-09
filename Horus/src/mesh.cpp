@@ -80,6 +80,7 @@ std::vector<GeometryObject*> Mesh::getTriangles()
 
 	for (Triangle& t : triangles)
 	{
+		t.getShader() = getShader();
 		RTriangles.push_back(&t);
 	}
 

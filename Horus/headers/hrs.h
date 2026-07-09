@@ -160,7 +160,7 @@ enum class ParameterType {
 	LAT,
 	WINDOW,
 	SHADER,
-	GEOMETRY
+	GEO
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;

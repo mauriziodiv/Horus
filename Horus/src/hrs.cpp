@@ -18,7 +18,7 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"lat", ParameterType::LAT},
 	{"window", ParameterType::WINDOW},
 	{"shader", ParameterType::SHADER},
-	{"geometry", ParameterType::GEOMETRY}
+	{"geo", ParameterType::GEO}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -333,7 +333,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 					}
 					break;
 
-				case ParameterType::GEOMETRY:
+				case ParameterType::GEO:
 					tokenSearch(file, '/', token);
 					if (!token.empty())
 					{
