@@ -65,6 +65,7 @@ bool Mesh::loadGeometry(const char* filename)
 	{
 		if (!importObj(filename)) { return false; };
 		if (!getData()) { return false; }
+		//add tranformation
 		buildTriangles();
 
 		return true;
