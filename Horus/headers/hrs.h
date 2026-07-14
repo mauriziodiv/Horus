@@ -141,6 +141,10 @@ struct HitRecord
 	bool front = false;
 	bool back = false;
 
+	float b0 = 0.0f;
+	float b1 = 0.0f;
+	float b2 = 0.0f;
+
 	Vector3D<float> hitPoint;
 	float t = 0.0f;
 };

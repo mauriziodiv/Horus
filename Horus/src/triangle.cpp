@@ -24,6 +24,25 @@ Triangle::Triangle(const TriangleMesh* mesh, int tIndex) : GeometryObject(Geomet
 	vertices[0] = mesh->vertex[i01];
 	vertices[1] = mesh->vertex[i02];
 	vertices[2] = mesh->vertex[i03];
+
+	if (mesh->vertexNormal.size() > 0)
+	{
+		hasVertexNormals = true;
+
+		int n01 = mesh->normalIndices[tIndex * 3];
+		int n02 = mesh->normalIndices[(tIndex * 3) + 1];
+		int n03 = mesh->normalIndices[(tIndex * 3) + 2];
+
+		vertexNormals[0] = mesh->vertexNormal[n01];
+		vertexNormals[1] = mesh->vertexNormal[n02];
+		vertexNormals[2] = mesh->vertexNormal[n03];
+	}
+	else
+	{
+		vertexNormals[0] = Vector3D<float>(0.0f, 0.0f, 0.0f);
+		vertexNormals[1] = Vector3D<float>(0.0f, 0.0f, 0.0f);
+		vertexNormals[2] = Vector3D<float>(0.0f, 0.0f, 0.0f);
+	}
 }
 
 bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
@@ -120,6 +139,9 @@ bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
 	hitRecord.hitPoint = ray.getPointat(t);
 	hitRecord.front = (det > 0);
 	hitRecord.back = (det < 0);
+	hitRecord.b0 = b0;
+	hitRecord.b1 = b1;
+	hitRecord.b2 = b2;
 
 	return true;
 }
@@ -143,11 +165,24 @@ void Triangle::setBoundingBox()
 
 void Triangle::computeNormal()
 {
-	Vector3D<float> edge_01 = vertices[1] - vertices[0];
-	Vector3D<float> edge_02 = vertices[2] - vertices[0];
+	if (hasVertexNormals == true)
+	{
+		float x = (vertexNormals[0].x * hitRecord.b0) + (vertexNormals[1].x * hitRecord.b1) + (vertexNormals[2].x * hitRecord.b2);
+		float y = (vertexNormals[0].y * hitRecord.b0) + (vertexNormals[1].y * hitRecord.b1) + (vertexNormals[2].y * hitRecord.b2);
+		float z = (vertexNormals[0].z * hitRecord.b0) + (vertexNormals[1].z * hitRecord.b1) + (vertexNormals[2].z * hitRecord.b2);
+
+		normal = Vector3D<float>(x, y, z);
+	}
+	else
+	{
+		Vector3D<float> edge_01 = vertices[1] - vertices[0];
+		Vector3D<float> edge_02 = vertices[2] - vertices[0];
 	
-	normal = edge_01 | edge_02;
+		normal = edge_01 | edge_02;
+	}
+
 	normal.normalize();
+	
 }
 
 Vector3D<float> Triangle::getNormal()

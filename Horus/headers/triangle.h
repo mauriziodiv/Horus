@@ -13,6 +13,7 @@ class TriangleMesh
 		int nVertices;
 
 		std::vector<int> vertexIndices;
+		std::vector<int> normalIndices;
 
 		std::vector<Vector3D<float>> vertex;
 		std::vector<Vector3D<float>> vertexNormal;
@@ -39,6 +40,9 @@ class Triangle : public GeometryObject
 		static std::vector<const TriangleMesh*> *allMeshes;
 
 		Vector3D<float> vertices[3];
+		Vector3D<float> vertexNormals[3];
+
+		bool hasVertexNormals = false;
 
 		virtual void setBoundingBox() override;
 		virtual void computeNormal() override;

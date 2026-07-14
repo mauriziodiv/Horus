@@ -38,6 +38,22 @@ bool Mesh::getData()
 		triangleMesh.vertex.push_back(VecToVector(v));
 		triangleMesh.nVertices++;
 	}
+
+	if (!objMesh.getNormals().empty())
+	{
+		triangleMesh.vertexIndices.reserve(objMesh.getNormals().size());
+		triangleMesh.vertexNormal.reserve(objMesh.getNormals().size());
+
+		for (const unsigned int n : objMesh.getNormalIndices())
+		{
+			triangleMesh.normalIndices.push_back(n - 1);
+		}
+
+		for (const Vec3D& n : objMesh.getNormals())
+		{
+			triangleMesh.vertexNormal.push_back(VecToVector(n));
+		}
+	}
 	
 	triangleMesh.nTriangles = static_cast<int>(triangleMesh.vertexIndices.size() / 3);
 
