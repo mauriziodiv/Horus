@@ -9,13 +9,17 @@ class Integrator
 {
 	public:
 		Integrator(std::vector<LightObject*>& lights) : lights(lights) { };
+		void addAreaLights(std::vector<AreaLight*>& al);
 		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces);
 
 		std::vector<LightObject*>& getLights() { return lights; }
+		std::vector<AreaLight*>& getAreaLights() { return areaLights; }
 
 	private:
 
 		std::vector<LightObject*> lights;
+		std::vector<AreaLight*> areaLights;
+
 		UnitRandom unitRandom;
 
 		Vector3D<float> toWorld(Vector3D<float> v, Vector3D<float> refVector);

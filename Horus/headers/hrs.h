@@ -164,7 +164,8 @@ enum class ParameterType {
 	LAT,
 	WINDOW,
 	SHADER,
-	GEO
+	GEO,
+	EXPOSURE
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -424,11 +425,6 @@ class PlaneObject : public GeometryObject {
 			
 			Vector3D<float> corners[4] = {
 
-				//Vector3D<float>(-width * 0.5, -height * 0.5, 0.0f),
-				//Vector3D<float>(width * 0.5, height * 0.5, 0.0f),
-				//Vector3D<float>(-width * 0.5, height * 0.5, 0.0f),
-				//Vector3D<float>(width * 0.5, -height * 0.5, 0.0f)
-
 				Vector3D<float> (-width * 0.5, 0.0f, -height * 0.5),
 				Vector3D<float>(width * 0.5, 0.0f, height * 0.5),
 				Vector3D<float>(-width * 0.5, 0.0f, height * 0.5),
@@ -487,6 +483,8 @@ class PlaneObject : public GeometryObject {
 			return false;
 		}
 
+		Matrix4X4<float> getRotationMatrix() { return R; }
+
 	private:
 
 		float width;
@@ -501,6 +499,35 @@ class PlaneObject : public GeometryObject {
 
 		static constexpr const char name[] = "Plane";
 
+};
+
+class AreaLight : public PlaneObject
+{
+
+	public:
+		AreaLight() : intensity(0.0f), exposure(0.0f), color(1.0f, 1.0f, 1.0f) {}
+
+		std::string_view getObjectName() override
+		{
+			return name;
+		}
+
+		void setIntensity(float i) { intensity = i; }
+		void setExposure(float e) { exposure = e; }
+		void setColor(Vector3D<float> c) { color = c; }
+
+		float getIntensity() { return intensity; }
+		float getExposure() { return exposure; }
+		Vector3D<float> getColor() { return color; }
+	
+	private:
+
+		float intensity;
+		float exposure;
+
+		Vector3D<float> color;
+
+		static constexpr const char name[] = "Area Light";
 };
 
 // LIGHT ################################################

@@ -29,6 +29,11 @@ void Integrator::reflect(Vector3D<float> hp, Vector3D<float> normal, Vector3D<fl
 	col += rayPath(newRay, bvh, nBounces - 1) * refGain;
 }
 
+void Integrator::addAreaLights(std::vector<AreaLight*>& al)
+{
+	areaLights = al;
+}
+
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
 Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 {
@@ -70,6 +75,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 			float refraction_gain = 0.0f;
 			float IOR = 1.0f;
 
+			Vector3D<float> areaLightContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
+
 			if (auto surface = std::get_if<Surface>(&shader))
 			{
 				diffuseGain = surface->getDiffuseGain();
@@ -78,6 +85,57 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 
 				refraction_gain = surface->getRefractionGain();
 				IOR = surface->getIOR();
+			}
+
+			// Area light sampling
+			if (!areaLights.empty())
+			{
+				float rnd = unitRandom.Generate() * areaLights.size();
+				AreaLight* areaLight = areaLights[static_cast<int>(rnd)];
+				Ray shadowRay = Ray();
+				float epsilon = 0.001f;
+				float distance = 0.0f;
+
+				float x_rnd = (unitRandom.Generate() * areaLight->getWidth()) - areaLight->getWidth() * 0.5;
+				float z_rnd = (unitRandom.Generate() * areaLight->getHeight()) - areaLight->getHeight() * 0.5;
+
+				Vector3D<float> areaLightPos = areaLight->position + (areaLight->getRotationMatrix() * (Vector3D<float>(x_rnd, 0.0f, z_rnd)));
+
+				Vector3D<float> shadowRayDir = areaLightPos - hitPoint;
+				Vector3D<float> surfaceNormal = closestHit->getNormal();
+				shadowRay.setOrigin(hitPoint + (surfaceNormal * epsilon));
+
+				distance = shadowRayDir.getLength();
+				shadowRayDir.normalize();
+				shadowRay.setDirection(shadowRayDir);
+				shadowRay.setTMax(distance - epsilon);
+
+				GeometryObject* lightBVH = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax());
+
+				if (lightBVH == nullptr || lightBVH == areaLight)
+				{
+					float cos_surface = surfaceNormal * shadowRay.getDirection();
+					float cos_light = areaLight->getNormal() * -shadowRay.getDirection();
+
+					if (cos_surface >= 0 && cos_light >= 0)
+					{
+						float angleContribution = (cos_surface * cos_light) / (distance * distance);
+						Vector3D<float> rawLight = areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
+						float pdfArea = 1.0f / (areaLight->getWidth() * areaLight->getHeight());
+
+						Vector3D<float> rddap = (rawLight % diffuseColor) * diffuseGain * angleContribution / pdfArea;
+						areaLightContribution = rddap * areaLights.size();
+
+						color += areaLightContribution;
+					}
+				}
+			}
+
+			if (AreaLight * areaLight = dynamic_cast<AreaLight*>(closestHit))
+			{
+				//AreaLight* areaLight = dynamic_cast<AreaLight*>(closestHit);
+
+				color += areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
 			}
 
 			// create new ray from hit point

@@ -18,7 +18,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"lat", ParameterType::LAT},
 	{"window", ParameterType::WINDOW},
 	{"shader", ParameterType::SHADER},
-	{"geo", ParameterType::GEO}
+	{"geo", ParameterType::GEO},
+	{"exposure", ParameterType::EXPOSURE}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -232,6 +233,23 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						{
 							lightObject->intensity = std::stof(token);
 						}
+						else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
+						{
+							areaLight->setIntensity(std::stof(token));
+						}
+					}
+					break;
+
+				case ParameterType::EXPOSURE:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
+						{
+							areaLight->setExposure(std::stof(token));
+						}
 					}
 					break;
 
@@ -243,16 +261,29 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 					{
 						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back().get());
 
+						std::stringstream s(token);
+
+						float x, y, z;
+						char comma;
+
+						s >> x >> comma >> y >> comma >> z;
+
+						Vector3D<float> col(x, y, z);
+
 						if (lightObject)
 						{
-							std::stringstream s(token);
+							//std::stringstream s(token);
 
-							float x, y, z;
-							char comma;
+							//float x, y, z;
+							//char comma;
 
-							s >> x >> comma >> y >> comma >> z;
+							//s >> x >> comma >> y >> comma >> z;
 
-							lightObject->setColor(Vector3D<float>(x, y, z));
+							lightObject->setColor(col);
+						}
+						else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
+						{
+							areaLight->setColor(col);
 						}
 					}
 
@@ -363,7 +394,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 	{
 		{ "sphere", GeometryType::SPHERE },
 		{ "plane", GeometryType::PLANE },
-		{ "mesh", GeometryType::MESH }
+		{ "mesh", GeometryType::MESH },
+		{ "areaLight", GeometryType::PLANE }
 	};
 
 	std::unordered_map<std::string, LightType> LightObjectsMap =
@@ -406,7 +438,15 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 					case GeometryType::PLANE:
 						// Create a plane object
 						//PlaneObject* planeObject = new PlaneObject();
-						sceneObjects.emplace_back(std::make_unique<PlaneObject>());
+						if (token == "areaLight")
+						{
+							sceneObjects.emplace_back(std::make_unique<AreaLight>());
+						}
+						else
+						{
+							sceneObjects.emplace_back(std::make_unique<PlaneObject>());
+						}
+
 						setObjectParameters(file, token, sceneObjects);
 						break;
 					

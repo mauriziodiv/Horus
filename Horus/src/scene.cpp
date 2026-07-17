@@ -94,12 +94,18 @@ bool Scene::geometriesCheck()
 bool Scene::lightCheck()
 {
 	lights.clear();
+	areaLights.clear();
 
 	for (const auto& lgts : sceneObjects)
 	{
 		if (lgts->getType() == SceneObjectType::LIGHT)
 		{
 			lights.push_back(static_cast<LightObject*>(lgts.get()));
+		}
+
+		else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(lgts.get()))
+		{
+			areaLights.push_back(areaLight);
 		}
 	}
 
@@ -175,6 +181,7 @@ void Scene::render()
 	float height = camera->getHeight();
 
 	Integrator integrator(lights);
+	integrator.addAreaLights(areaLights);
 
 	BVH bvh;
 	bvh.buildBVH(geometries);
