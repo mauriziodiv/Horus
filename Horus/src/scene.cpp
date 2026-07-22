@@ -95,6 +95,7 @@ bool Scene::lightCheck()
 {
 	lights.clear();
 	areaLights.clear();
+	meshLights.clear();
 
 	for (const auto& lgts : sceneObjects)
 	{
@@ -102,10 +103,15 @@ bool Scene::lightCheck()
 		{
 			lights.push_back(static_cast<LightObject*>(lgts.get()));
 		}
-
 		else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(lgts.get()))
 		{
 			areaLights.push_back(areaLight);
+		}
+		else if (MeshLight* meshLight = dynamic_cast<MeshLight*>(lgts.get()))
+		{
+			meshLight->buildCDF();
+			meshLights.push_back(meshLight);
+			//meshLights.buildCDF();
 		}
 	}
 
@@ -182,6 +188,7 @@ void Scene::render()
 
 	Integrator integrator(lights);
 	integrator.addAreaLights(areaLights);
+	integrator.addMeshLights(meshLights);
 
 	BVH bvh;
 	bvh.buildBVH(geometries);

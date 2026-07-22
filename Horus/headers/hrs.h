@@ -180,7 +180,8 @@ enum class GeometryType {
 	SPHERE,
 	PLANE,
 	TRIANGLE,
-	MESH
+	MESH,
+	MESH_LIGHT
 };
 
 enum class LightType {
@@ -225,6 +226,7 @@ class SceneObject {
 };
 
 // GEOMETRY ###############################################
+class MeshLight;
 
 // Derived classes for specific scene objects
 class GeometryObject : public SceneObject {
@@ -245,6 +247,8 @@ class GeometryObject : public SceneObject {
 
 		virtual void setBoundingBox() {}
 		BoundingBox& getBoundingBox() { return boundingBox; }
+
+		virtual MeshLight* getMeshLight() { return nullptr; }
 
 		virtual void computeNormal() {}
 

@@ -395,7 +395,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 		{ "sphere", GeometryType::SPHERE },
 		{ "plane", GeometryType::PLANE },
 		{ "mesh", GeometryType::MESH },
-		{ "areaLight", GeometryType::PLANE }
+		{ "areaLight", GeometryType::PLANE },
+		{ "meshLight", GeometryType::MESH_LIGHT }
 	};
 
 	std::unordered_map<std::string, LightType> LightObjectsMap =
@@ -456,6 +457,11 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 						setObjectParameters(file, token, sceneObjects);
 						break;
 
+					case GeometryType::MESH_LIGHT:
+						// Create a sphere object
+						sceneObjects.emplace_back(std::make_unique<MeshLight>());
+						setObjectParameters(file, token, sceneObjects);
+						break;
 				}
 			}
 

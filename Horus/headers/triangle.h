@@ -4,6 +4,8 @@
 #include "ray.h"
 #include "hrs.h"
 
+class MeshLight;
+
 class TriangleMesh
 {
 	public:
@@ -49,6 +51,10 @@ class Triangle : public GeometryObject
 		virtual Vector3D<float> getNormal() override;
 
 		std::string_view getObjectName() override { return name; }
+
+		virtual MeshLight* getMeshLight() { return meshLightPtr; }
+
+		MeshLight* meshLightPtr = nullptr;
 
 	private:
 		float epsilon = 0.001f;

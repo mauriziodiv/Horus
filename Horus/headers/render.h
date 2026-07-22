@@ -4,12 +4,14 @@
 #include "hrs.h"
 #include "accelerator.h"
 #include "sampler.h"
+#include "mesh.h"
 
 class Integrator
 {
 	public:
 		Integrator(std::vector<LightObject*>& lights) : lights(lights) { };
 		void addAreaLights(std::vector<AreaLight*>& al);
+		void addMeshLights(std::vector<MeshLight*>& ml);
 		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces);
 
 		std::vector<LightObject*>& getLights() { return lights; }
@@ -19,6 +21,7 @@ class Integrator
 
 		std::vector<LightObject*> lights;
 		std::vector<AreaLight*> areaLights;
+		std::vector<MeshLight*> meshLights;
 
 		UnitRandom unitRandom;
 
