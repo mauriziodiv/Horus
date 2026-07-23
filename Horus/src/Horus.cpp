@@ -93,6 +93,24 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	//Set the number of samples
+	if (inputDescription.size() > 6 && !inputDescription[6].empty())
+	{
+		if (!scene.setSamples(inputDescription[6]))
+		{
+			std::cout << "Invalid Number of Samples!" << std::endl;
+		}
+	}
+
+	//Set the number of bounces
+	if (inputDescription.size() > 7 && !inputDescription[7].empty())
+	{
+		if (!scene.setBounces(inputDescription[7]))
+		{
+			std::cout << "Invalid Number of Bounces!" << std::endl;
+		}
+	}
+
 	// Get scene from scene objects
 	if (!scene.getScene(sceneObjects)) { return 1; }
 

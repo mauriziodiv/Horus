@@ -198,6 +198,32 @@ bool Scene::setFocalLength(const std::string_view fl)
 	return true;
 }
 
+bool Scene::setSamples(const std::string_view s)
+{
+	float samples = 0.0f;
+	std::string_view samples_token = (s.front() == '-') ? s.substr(1) : s;
+
+	if (!parseFloat(samples_token, samples)) { return false; };
+
+	if (samples < 1.0f) { return false; }
+
+	numberOfSamples = static_cast<int>(samples);
+
+	return true;
+}
+
+bool Scene::setBounces(const std::string_view b)
+{
+	float bncs = 0.0f;
+	std::string_view bounces_token = (b.front() == '-') ? b.substr(1) : b;
+
+	if (!parseFloat(bounces_token, bncs)) { return false; };
+
+	bounces = static_cast<int>(bncs);
+
+	return true;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -260,7 +286,7 @@ void Scene::render()
 
 				ray.setDirection(Vector3D<float>(x, y, z));
 
-				color += integrator.rayPath(ray, bvh, 5);
+				color += integrator.rayPath(ray, bvh, bounces);
 			}
 
 			color /= (float)numberOfSamples;

@@ -23,6 +23,8 @@ class Scene {
 		bool setGammaCorrection(const std::string_view gc);
 		bool setWindow(const std::string_view wSize);
 		bool setFocalLength(const std::string_view fl);
+		bool setSamples(const std::string_view s);
+		bool setBounces(const std::string_view b);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -55,6 +57,7 @@ class Scene {
 		GammaCorrection gammaCorrection = GammaCorrection::GAMMA2;
 
 		int32_t numberOfSamples = 10; //100
+		int bounces = 5;
 		float width = 400.0f;
 		float height = 400.0f;
 		float focal_length = 35.0f;
