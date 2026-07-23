@@ -51,7 +51,7 @@ class MeshLight : public Mesh
 {
 	public:
 
-		MeshLight() : intensity(1.0f), exposure(0.0f), color(1.0f, 1.0f, 1.0f), totalArea(0.0f) {}
+		MeshLight() : intensity(0.0f), exposure(0.0f), color(1.0f, 1.0f, 1.0f), totalArea(0.0f) {}
 
 		void setIntensity(float i) { intensity = i; }
 		void setExposure(float e) { exposure = e; }

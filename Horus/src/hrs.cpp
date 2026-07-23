@@ -237,6 +237,10 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						{
 							areaLight->setIntensity(std::stof(token));
 						}
+						else if (MeshLight* meshLight = dynamic_cast<MeshLight*>(sceneObjects.back().get()))
+						{
+							meshLight->setIntensity(std::stof(token));
+						}
 					}
 					break;
 
@@ -249,6 +253,10 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
 						{
 							areaLight->setExposure(std::stof(token));
+						}
+						else if (MeshLight* meshLight = dynamic_cast<MeshLight*>(sceneObjects.back().get()))
+						{
+							meshLight->setExposure(std::stof(token));
 						}
 					}
 					break;
@@ -284,6 +292,10 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
 						{
 							areaLight->setColor(col);
+						}
+						else if (MeshLight* meshLight = dynamic_cast<MeshLight*>(sceneObjects.back().get()))
+						{
+							meshLight->setColor(col);
 						}
 					}
 

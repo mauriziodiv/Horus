@@ -187,16 +187,17 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces)
 				}
 			}
 
-			if (AreaLight* areaLight = dynamic_cast<AreaLight*>(closestHit))
+			if (AreaLight* al = dynamic_cast<AreaLight*>(closestHit))
 			{
 				//AreaLight* areaLight = dynamic_cast<AreaLight*>(closestHit);
-				color += areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
+				color += al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure());
 			}
 
-			//if (MeshLight* meshLight = dynamic_cast<MeshLight*>(closestHit))
-			//{
-			//	color += meshLight->getColor() * meshLight->getIntensity() * std::pow(2.0f, meshLight->getExposure());
-			//}
+			if (closestHit->getMeshLight() != nullptr)
+			{
+				MeshLight* ml = closestHit->getMeshLight();
+				color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure());
+			}
 
 			// create new ray from hit point
 
