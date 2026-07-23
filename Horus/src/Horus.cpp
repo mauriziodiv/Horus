@@ -63,6 +63,7 @@ int main(int argc, char* argv[])
 	// Set render output type
 	if (!scene.setRenderOutput(inputDescription[1])) { return 1; }
 
+	// Set the destination of the render
 	if (!scene.setFilePathWrite(inputDescription[2])) { return 1; }
 
 	// Set gamma correction option if provided
@@ -71,6 +72,24 @@ int main(int argc, char* argv[])
 		if (!scene.setGammaCorrection(inputDescription[3]))
 		{
 			std::cout << "Invalid gamma correction option!" << std::endl;
+		}
+	}
+
+	//Set the Window
+	if (inputDescription.size() > 4 && !inputDescription[4].empty())
+	{
+		if (!scene.setWindow(inputDescription[4]))
+		{
+			std::cout << "Invalid Window!" << std::endl;
+		}
+	}
+
+	//Set the Focal Length
+	if (inputDescription.size() > 5 && !inputDescription[5].empty())
+	{
+		if (!scene.setFocalLength(inputDescription[5]))
+		{
+			std::cout << "Invalid focal length!" << std::endl;
 		}
 	}
 

@@ -3,6 +3,7 @@
 #include "output.h"
 #include "render.h"
 #include "accelerator.h"
+#include <charconv>
 
 enum class GammaCorrection
 {
@@ -20,6 +21,12 @@ class Scene {
 		std::vector<LightObject*> getLights() { return lights; }
 		bool setRenderOutput(const std::string_view& ro);
 		bool setGammaCorrection(const std::string_view gc);
+		bool setWindow(const std::string_view wSize);
+		bool setFocalLength(const std::string_view fl);
+
+		float getWidth() { return width; }
+		float getHeight() { return height; }
+
 		bool getGammaCorrectionSet() { return gammaCorrectionSet; }
 		RenderOutput getRenderOutput() { return renderOutput; }
 		void render();
@@ -48,4 +55,7 @@ class Scene {
 		GammaCorrection gammaCorrection = GammaCorrection::GAMMA2;
 
 		int32_t numberOfSamples = 10; //100
+		float width = 400.0f;
+		float height = 400.0f;
+		float focal_length = 35.0f;
 };

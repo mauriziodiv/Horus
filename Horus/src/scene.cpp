@@ -1,5 +1,15 @@
 #include "scene.h"
 
+bool parseFloat(std::string_view token, float& v)
+{
+	const char* first = token.data();
+	const char* last = first + token.size();
+
+	std::from_chars_result res = std::from_chars(first, last, v);
+
+	return res.ec == std::errc{} && res.ptr == last;
+}
+
 std::unordered_map<std::string_view, RenderOutput> renderOutputMap = {
 	{ "ppm", RenderOutput::PPM }
 };
@@ -154,6 +164,40 @@ bool Scene::setGammaCorrection(const std::string_view gc)
 	return true;
 }
 
+bool Scene::setWindow(const std::string_view wSize)
+{
+	float w = 0.0f;
+	float h = 0.0f;
+
+	std::string_view token = (wSize.front() == '-') ? wSize.substr(1) : wSize;
+
+	size_t sep = token.find(",");
+
+	if (sep == std::string_view::npos) { return false; }
+
+	std::string_view w_token = token.substr(0, sep);
+	std::string_view h_token = token.substr(sep + 1);
+
+	if (!parseFloat(w_token, w) || !parseFloat(h_token, h)) { return false; }
+
+	width = w;
+	height = h;
+
+	return true;
+}
+
+bool Scene::setFocalLength(const std::string_view fl)
+{
+	float f = 0.0;
+	std::string_view fl_token = (fl.front() == '-') ? fl.substr(1) : fl;
+
+	if (!parseFloat(fl_token, f)) { return false; };
+
+	focal_length = f;
+
+	return true;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -175,10 +219,12 @@ void Scene::render()
 {
 	output.setRenderOutput(getRenderOutput());
 	output.setFilePathWrite(getFilePathWrite());
-	output.setWidth(getCamera()->getWidth());
-	output.setHeight(getCamera()->getHeight());
+	output.setWidth(getWidth());
+	output.setHeight(getHeight());
 
-	camera->setWindow(camera->getWidth(), camera->getHeight());
+	camera->setFocalLength(focal_length);
+	camera->setWindow(getWidth(), getHeight());
+	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
 
 	std::cout << camera->getWidth() << " " << camera->getHeight() << std::endl;

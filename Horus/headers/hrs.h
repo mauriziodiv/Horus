@@ -675,6 +675,8 @@ class CameraObject : public SceneObject {
 			return position;
 		}
 
+		void setFocalLength(float fl) { focal_length = fl / (sensorHeight * 0.5f); }
+
 		void setWindow(float w, float h) 
 		{ 
 			width = w;
@@ -718,6 +720,8 @@ class CameraObject : public SceneObject {
 		Vector3D<float> lower_left_corner;
 		Vector3D<float> horizontal;
 		Vector3D<float> vertical;
+
+		float sensorHeight = 24.0f;
 };
 
 class PerspectiveCameraObject : public CameraObject {
