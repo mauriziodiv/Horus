@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 	{
 		if (!scene.setGammaCorrection(inputDescription[3]))
 		{
-			std::cout << "Invalid gamma correction option!" << std::endl;
+			std::cout << "Invalid Gamma Correction option!" << std::endl;
 		}
 	}
 
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 	{
 		if (!scene.setFocalLength(inputDescription[5]))
 		{
-			std::cout << "Invalid Focal Length!" << std::endl;
+			std::cout << "Invalid FocalLength!" << std::endl;
 		}
 	}
 
