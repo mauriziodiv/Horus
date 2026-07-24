@@ -537,6 +537,7 @@ bool GeometryObject::linkShader(std::string& shaderFilePath)
 	}
 
 	parse();
+	shaderFile.close();
 
 	return true;
 }
