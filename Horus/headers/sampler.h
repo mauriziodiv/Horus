@@ -22,6 +22,8 @@ class Sampler
 	public:
 		Sampler();
 		static Vector3D<float> cosineWeightSampleHemisphere(float r1, float r2);
+		static float computePhase(float g, float cosTheta);
+		static Vector3D<float> sampleHG(float g, float r1, float r2);
 
 	private:
 		UnitRandom unitRandom;

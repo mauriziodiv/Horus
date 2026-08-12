@@ -26,3 +26,31 @@ Vector3D<float> Sampler::cosineWeightSampleHemisphere(float r1, float r2)
 
 	return Vector3D<float>(x, y, z);
 }
+
+float Sampler::computePhase(float g, float cosTheta)
+{
+	float den = 1.0f + (g * g) - (2.0f * g * cosTheta);
+	den = std::max(den, 1e-7f);
+
+	return (1.0f - (g * g)) / (4.0f * M_PI * den * std::sqrt(den));
+}
+
+Vector3D<float> Sampler::sampleHG(float g, float r1, float r2)
+{
+	float cosTheta;
+
+	if (std::abs(g) < 1e-3f)
+	{
+		cosTheta = 1.0f - 2.0f * r1;
+	}
+	else
+	{
+		float s = (1.0f - g * g) / (1.0f + g - 2.0f * g * r1);
+		cosTheta = (1.0f + g * g - s * s) / (2.0f * g);
+	}
+
+	float sinTheta = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
+	float phi = 2.0f * M_PI * r2;
+
+	return Vector3D<float>(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+}
