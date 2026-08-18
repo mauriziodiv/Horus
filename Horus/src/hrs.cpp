@@ -34,7 +34,10 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"diffuse_color", ShaderParameterType::DIFFUSE_COLOR},
 	{"roughness", ShaderParameterType::ROUGHNESS},
 	{"refraction_gain", ShaderParameterType::REFRACTION_GAIN},
-	{"ior", ShaderParameterType::IOR}
+	{"ior", ShaderParameterType::IOR},
+	{"subsurface_gain", ShaderParameterType::SUBSURFACE_GAIN},
+	{"subsurface_color", ShaderParameterType::SUBSURFACE_COLOR},
+	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -362,7 +365,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 					break;
 
 				case ParameterType::SHADER:
-
 					tokenSearch(file, '/', token);
 
 					if (!token.empty())
@@ -387,7 +389,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						}
 					}
 					break;
-				}
+				}	
 		}
 		else if (!token.empty())
 		{
@@ -730,6 +732,65 @@ bool GeometryObject::parse()
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
 												p->setIOR(std::stof(token));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::SUBSURFACE_GAIN:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setSubsurfaceGain(std::stof(token));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::SUBSURFACE_COLOR:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											std::stringstream s(token);
+
+											float x, y, z;
+											char comma;
+
+											s >> x >> comma >> y >> comma >> z;
+
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setSubsurfaceColor(Vector3D<float>(x, y, z));
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::SUBSURFACE_RADIUS:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											std::stringstream s(token);
+
+											float x, y, z;
+											char comma;
+
+											s >> x >> comma >> y >> comma >> z;
+
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setSubsurfaceRadius(Vector3D<float>(x, y, z));
 											}
 										}
 

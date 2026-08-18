@@ -28,6 +28,6 @@ class Integrator
 		Vector3D<float> toWorld(Vector3D<float> v, Vector3D<float> refVector);
 		void reflect(Vector3D<float> hp, Vector3D<float> normal, Vector3D<float> refDir, BVH& bvh, int nBounces, float refGain, Vector3D<float>& col);
 
-		Vector3D<float> subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& medium, int nBounces);
+		Vector3D<float> subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& medium, float ior, int nBounces);
 		bool sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight, Vector3D<float>& lightPos, Vector3D<float>& lightNormal, Vector3D<float>& lightEmission, float& pdfArea, size_t& lightObjectCount);
 };

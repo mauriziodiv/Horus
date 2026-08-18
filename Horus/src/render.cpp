@@ -31,17 +31,26 @@ void Integrator::reflect(Vector3D<float> hp, Vector3D<float> normal, Vector3D<fl
 }
 
 // Subsurface scattering simulation using a random walk approach.
-Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& medium, int nBounces)
+Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& medium, float ior, int nBounces)
 {
-	float sigmaT = medium.getSigmaT().x;
+	Vector3D<float> sigmaTV = medium.getSigmaT();
 
-	if (sigmaT <= 0.0f)
+	float maxSigmaT = std::max(sigmaTV.x, std::max(sigmaTV.y, sigmaTV.z));
+
+	if (maxSigmaT <= 0.0f)
 	{
 		return rayPath(ray, bvh, nBounces - 1);
 	}
 
-	float albedo = medium.getAlbedo();
+	int hero = static_cast<int>(unitRandom.Generate() * 3.0f);
+
+	float sigmaTHero = sigmaTV[hero];
+
+	//float albedo = medium.getAlbedo();
+	Vector3D<float> sigmaS = medium.getSigmaS();
 	float g = medium.getG();
+
+	bool scattered = false;
 
 	Vector3D<float> subsurfaceColor(1.0f, 1.0f, 1.0f);
 	Vector3D<float> radiance(0.0f, 0.0f, 0.0f);
@@ -54,7 +63,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 	{
 
 		float rnd = unitRandom.Generate();
-		float tFlight = -std::log(1.0f - rnd) / sigmaT;
+		float tFlight = -std::log(1.0f - rnd) / sigmaTHero;
 
 		GeometryObject* boundaryHit = bvh.traversal(currentRay, currentRay.getTMin(), currentRay.getTMax());
 
@@ -70,13 +79,85 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 			Vector3D<float> exitPoint = currentRay.getPointat(tBoundary);
 			Vector3D<float> exitDir = currentRay.getDirection();
 
-			Ray exitRay(exitPoint + (exitDir * 0.001f), exitDir);
+			Vector3D<float> boundaryWeight;
 
-			return radiance + (subsurfaceColor % rayPath(exitRay, bvh, nBounces - 1, false));
+			boundaryWeight.x = std::exp(-(sigmaTV.x - sigmaTHero) * tBoundary);
+			boundaryWeight.y = std::exp(-(sigmaTV.y - sigmaTHero) * tBoundary);
+			boundaryWeight.z = std::exp(-(sigmaTV.z - sigmaTHero) * tBoundary);
+
+			subsurfaceColor = subsurfaceColor % boundaryWeight;
+
+			boundaryHit->computeNormal();
+			Vector3D<float> normal = boundaryHit->getNormal();
+			
+			Vector3D<float> dir = exitDir;
+			dir.normalize();
+
+			float d = dir * normal;
+			float ratio;
+
+			if (d < 0.0f)
+			{
+				ratio = 1.0f / ior;
+			}
+			else
+			{
+				ratio = ior / 1.0f;
+				normal = -normal;
+			}
+
+			float cos_i = -(dir * normal);
+
+			float k = 1.0f - (ratio * ratio) * (1.0f - (cos_i * cos_i));
+
+			if (k < 0.0f)
+			{
+				currentRay.reflect(normal);
+				Vector3D<float> reflectedDir = currentRay.getDirection();
+				currentRay.setOrigin(exitPoint + (reflectedDir * 0.001f));
+
+				continue;
+			}
+
+			//Ray exitRay(exitPoint + (exitDir * 0.001f), exitDir);
+
+			//return radiance + (subsurfaceColor % rayPath(exitRay, bvh, nBounces - 1, false));
+
+			float cos_schlick = (ratio > 1.0f) ? std::sqrt(k) : cos_i;
+
+			float F_0 = ((1.0f - ior) / (1.0 + ior)) * ((1.0f - ior) / (1.0 + ior));
+			float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f);
+
+			if (std::abs(ior - 1.0f) < 1e-6f)
+			{
+				F = 0;
+			}
+
+			if (unitRandom.Generate() < F)
+			{
+				currentRay.reflect(normal);
+				Vector3D<float> reflectedDir = currentRay.getDirection();
+				currentRay.setOrigin(exitPoint + (reflectedDir * 0.001f));
+
+				continue;
+			}
+
+			Ray exitRay(exitPoint - (normal * 0.001f), exitDir);
+			exitRay.refract(exitDir, normal, k, cos_i, ratio);
+
+			return radiance + (subsurfaceColor % rayPath(exitRay, bvh, nBounces - 1, !scattered));
 		}
 
 		Vector3D<float> scatterPoint = currentRay.getPointat(tFlight);
 		Vector3D<float> currentDir = currentRay.getDirection();
+
+		scattered = true;
+
+		Vector3D<float> channelWeight;
+
+		channelWeight.x = (sigmaS.x / sigmaTHero) * std::exp(-(sigmaTV.x - sigmaTHero) * tFlight);
+		channelWeight.y = (sigmaS.y / sigmaTHero) * std::exp(-(sigmaTV.y - sigmaTHero) * tFlight);
+		channelWeight.z = (sigmaS.z / sigmaTHero) * std::exp(-(sigmaTV.z - sigmaTHero) * tFlight);
 
 		AreaLight* areaLight = nullptr;
 		MeshLight* meshLight = nullptr;
@@ -101,7 +182,11 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 			{
 				float tBoundaryHit = boundaryHit->hitRecord.t;
 				Vector3D<float> pointBoundaryHit = toBoundary.getPointat(tBoundaryHit);
-				float Tr = std::exp(-sigmaT * tBoundaryHit);
+				Vector3D<float> Tr;// = std::exp(-sigmaTHero * tBoundaryHit);
+
+				Tr.x = std::exp(-sigmaTV.x * tBoundaryHit);
+				Tr.y = std::exp(-sigmaTV.y * tBoundaryHit);
+				Tr.z = std::exp(-sigmaTV.z * tBoundaryHit);
 
 				float epsilon = 0.0001f;
 
@@ -123,7 +208,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 							float geometry = cosLight / (distance * distance);
 
-							Vector3D<float> contribution = (subsurfaceColor % lightEmission) * (albedo * phase * geometry * Tr / pdfArea);
+							Vector3D<float> contribution = (subsurfaceColor % channelWeight % lightEmission % Tr) * (phase * geometry / pdfArea);
 
 							radiance += contribution * lightObjectCount;
 						}
@@ -141,7 +226,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 		currentRay.setOrigin(scatterPoint);
 		currentRay.setDirection(newDir);
 
-		subsurfaceColor *= albedo;
+		subsurfaceColor = subsurfaceColor % channelWeight;
 
 		if (i > 8)
 		{
@@ -254,6 +339,10 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			float refraction_gain = 0.0f;
 			float IOR = 1.0f;
 
+			float subsurfaceGain = 0.0f;
+			//Vector3D<float> subsurfaceColor(1.0f, 1.0f, 1.0f);
+			//Vector3D<float> subsurfaceRadius(1.0f, 1.0f, 1.0f);
+
 			Medium medium;
 
 			Vector3D<float> lightsContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
@@ -268,10 +357,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				refraction_gain = surface->getRefractionGain();
 				IOR = surface->getIOR();
 
+				subsurfaceGain = surface->getSubsurfaceGain();
+				//subsurfaceColor = surface->getSubsurfaceColor();
+				//subsurfaceRadius = surface->getSubsurfaceRadius();
+
 				medium = surface->getMedium();
-				medium.setSigmaS(Vector3D<float>(5.0f, 5.0f, 5.0f));
-				medium.setSigmaA(Vector3D<float>(0.1f, 0.1f, 0.1f));
-				medium.setG(0.0f);
 			}
 
 			// Area and meshLight light sampling
@@ -436,12 +526,19 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					}
 					else
 					{
-					     //	refract()
+					    //	refract()
 						Ray refracted = ray;
 						refracted.setOrigin(hitPoint - (normal * epsilon));
 						refracted.refract(dir, normal, k, cos_i, ratio);
-						//color += rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
-						color += subsurfaceWalk(refracted, bvh, medium, nBounces) * refraction_gain;
+						
+						if (subsurfaceGain > 0.0f)
+						{
+							color += subsurfaceWalk(refracted, bvh, medium, IOR, nBounces) * refraction_gain * subsurfaceGain;
+						}
+						else
+						{
+							color += rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
+						}
 					}
 				}
 			}

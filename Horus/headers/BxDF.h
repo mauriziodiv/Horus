@@ -70,7 +70,7 @@ public:
 class Surface : public BxDF
 {
 	public:
-		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f) {}
+		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f) {}
 
 		void setDiffuseGain(float g)
 		{
@@ -142,12 +142,52 @@ class Surface : public BxDF
 			return IOR;
 		}
 
+		void setSubsurfaceGain(float g)
+		{
+			subsurfaceGain = g;
+		}
+
+		float getSubsurfaceGain()
+		{
+			return subsurfaceGain;
+		}
+
+		Vector3D<float> getSubsurfaceColor()
+		{
+			return subsurfaceColor;
+		}
+
+		void setSubsurfaceColor(Vector3D<float> col)
+		{
+			subsurfaceColor = col;
+
+			updateMedium();
+		}
+
+		void setSubsurfaceRadius(Vector3D<float> radius)
+		{
+			subsurfaceRadius = radius;
+
+			updateMedium();
+		}
+
+		Vector3D<float> getSubsurfaceRadius()
+		{
+			return subsurfaceRadius;
+		}
+
 	private:
 		float diffuseGain;
 		Vector3D<float> diffuseColor;
 		float roughness;
 		float refractionGain;
 		float IOR;
+		float subsurfaceGain;
+		Vector3D<float> subsurfaceColor;
+		Vector3D<float> subsurfaceRadius;
+		
+		void updateChannel(float radius, float color, float& sigmaS, float& sigmaA);
+		void updateMedium();
 
 		Medium medium;
 };
