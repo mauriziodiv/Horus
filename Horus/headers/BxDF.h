@@ -40,7 +40,7 @@ public:
 
 	void setG(float value)
 	{
-		g = value;
+		g = std::min(std::max(value, -0.99f), 0.99f);
 	}
 
 	Vector3D<float> getSigmaS() const

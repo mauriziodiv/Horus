@@ -37,7 +37,8 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"ior", ShaderParameterType::IOR},
 	{"subsurface_gain", ShaderParameterType::SUBSURFACE_GAIN},
 	{"subsurface_color", ShaderParameterType::SUBSURFACE_COLOR},
-	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS}
+	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS},
+	{"subsurface_anisotropy", ShaderParameterType::SUBSURFACE_ANISOTROPY}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -791,6 +792,21 @@ bool GeometryObject::parse()
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
 												p->setSubsurfaceRadius(Vector3D<float>(x, y, z));
+											}
+										}
+
+										break;
+
+										case ShaderParameterType::SUBSURFACE_ANISOTROPY:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setAnisotropy(std::stof(token));
 											}
 										}
 
