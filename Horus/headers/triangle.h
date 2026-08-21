@@ -16,10 +16,11 @@ class TriangleMesh
 
 		std::vector<int> vertexIndices;
 		std::vector<int> normalIndices;
+		std::vector<int> textureIndices;
 
 		std::vector<Vector3D<float>> vertex;
 		std::vector<Vector3D<float>> vertexNormal;
-		std::vector<Vector3D<float>> vertexUV;
+		std::vector<Point<float>> vertexUV;
 
 		bool reverseOrientation, transformSwapsHandedness;
 
@@ -43,11 +44,14 @@ class Triangle : public GeometryObject
 
 		Vector3D<float> vertices[3];
 		Vector3D<float> vertexNormals[3];
+		Point<float> vertexUV[3];
 
 		bool hasVertexNormals = false;
+		bool hasVertexUV = false;
 
 		virtual void setBoundingBox() override;
 		virtual void computeNormal() override;
+		virtual void computeTexture() override;
 		virtual Vector3D<float> getNormal() override;
 
 		std::string_view getObjectName() override { return name; }
@@ -60,5 +64,7 @@ class Triangle : public GeometryObject
 		float epsilon = 0.001f;
 		
 		Vector3D<float> normal;
+		Point<float> uv;
+
 		static constexpr const char name[] = "Triangle";
 };

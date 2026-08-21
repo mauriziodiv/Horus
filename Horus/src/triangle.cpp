@@ -43,6 +43,25 @@ Triangle::Triangle(const TriangleMesh* mesh, int tIndex) : GeometryObject(Geomet
 		vertexNormals[1] = Vector3D<float>(0.0f, 0.0f, 0.0f);
 		vertexNormals[2] = Vector3D<float>(0.0f, 0.0f, 0.0f);
 	}
+
+	if (mesh->vertexUV.size() > 0)
+	{
+		hasVertexUV = true;
+
+		int u01 = mesh->textureIndices[tIndex * 3];
+		int u02 = mesh->textureIndices[(tIndex * 3) + 1];
+		int u03 = mesh->textureIndices[(tIndex * 3) + 2];
+
+		vertexUV[0] = mesh->vertexUV[u01];
+		vertexUV[1] = mesh->vertexUV[u02];
+		vertexUV[2] = mesh->vertexUV[u03];
+	}
+	else
+	{
+		vertexUV[0] = Point<float>(0.0f, 0.0f);
+		vertexUV[1] = Point<float>(0.0f, 0.0f);
+		vertexUV[2] = Point<float>(0.0f, 0.0f);
+	}
 }
 
 bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
@@ -182,7 +201,17 @@ void Triangle::computeNormal()
 	}
 
 	normal.normalize();
-	
+}
+
+void Triangle::computeTexture()
+{
+	if (hasVertexUV == true)
+	{
+		float u = (vertexUV[0].x * hitRecord.b0) + (vertexUV[1].x * hitRecord.b1) + (vertexUV[2].x * hitRecord.b2);
+		float v = (vertexUV[0].y * hitRecord.b0) + (vertexUV[1].y * hitRecord.b1) + (vertexUV[2].y * hitRecord.b2);
+
+		uv = Point<float>(u, v);
+	}
 }
 
 Vector3D<float> Triangle::getNormal()

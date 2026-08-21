@@ -4,6 +4,8 @@
 #include "hrs.h"
 #include "scene.h"
 #include <iostream>
+//#include <ImfHeader.h>
+//#include <OpenEXRConfig.h>
 
 // Validates the input arguments for the program.
 bool inputValidation(const std::vector<std::string>& inputDescription)

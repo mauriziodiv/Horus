@@ -12,6 +12,8 @@ bool Mesh::importObj(const char* filename)
 	return true;
 }
 
+
+
 Vector3D<float> Mesh::VecToVector(Vec3D v)
 {
 	Vector3D<float> vector3D;
@@ -52,6 +54,21 @@ bool Mesh::getData()
 		for (const Vec3D& n : objMesh.getNormals())
 		{
 			triangleMesh.vertexNormal.push_back(VecToVector(n));
+		}
+	}
+
+	if (!objMesh.getTextures().empty())
+	{
+		triangleMesh.vertexUV.reserve(objMesh.getTextures().size());
+
+		for (const unsigned int t : objMesh.getTextureIndices())
+		{
+			triangleMesh.textureIndices.push_back(t - 1);
+		}
+
+		for (const Vec2D& t : objMesh.getTextures())
+		{
+			triangleMesh.vertexUV.emplace_back(t.getX(), t.getY());
 		}
 	}
 	

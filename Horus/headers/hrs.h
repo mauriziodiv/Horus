@@ -255,6 +255,7 @@ class GeometryObject : public SceneObject {
 		virtual MeshLight* getMeshLight() { return nullptr; }
 
 		virtual void computeNormal() {}
+		virtual void computeTexture() {}
 
 		void setPositionUpdated(bool updated) { positionUpdated = updated; }
 		void setRotationUpdated(bool updated) { rotationUpdated = updated; }

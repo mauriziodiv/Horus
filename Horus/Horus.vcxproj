@@ -136,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(ProjectDir)..\..\RealObj\RealObj\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(ProjectDir)..\..\RealObj\RealObj\headers;$(VcpkgRoot)\installed\x64-windows\include\OpenEXR;$(VcpkgRoot)\installed\x64-windows\include\Imath</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>

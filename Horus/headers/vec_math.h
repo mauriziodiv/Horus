@@ -10,10 +10,9 @@ template <typename T> class Point
 
 	public:
 
-		Point(T v1, T v2) : x(v1), y(v2)
-		{
+		Point() : x(T(0)), y(T(0)) { }
 
-		}
+		Point(T v1, T v2) : x(v1), y(v2) { }
 
 		T getX()
 		{
