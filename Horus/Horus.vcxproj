@@ -31,6 +31,7 @@
     <ClCompile Include="src\scene.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\test.cpp" />
+    <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\triangle.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\vec_math.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="headers\scene.h" />
     <ClInclude Include="headers\shader.h" />
     <ClInclude Include="headers\test.h" />
+    <ClInclude Include="headers\texture.h" />
     <ClInclude Include="headers\triangle.h" />
     <ClInclude Include="headers\util.h" />
     <ClInclude Include="headers\vec_math.h" />
@@ -134,7 +136,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);IMATH_DLL;OPENEXR_DLL</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)headers;$(ProjectDir)..\..\RealObj\RealObj\headers;$(VcpkgRoot)\installed\x64-windows\include\OpenEXR;$(VcpkgRoot)\installed\x64-windows\include\Imath</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

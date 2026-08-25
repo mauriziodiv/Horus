@@ -1,5 +1,10 @@
 #include "BxDF.h"
 
+bool Surface::setDiffuseColorTex(const std::string& filePath)
+{
+	return diffuseColorTex.load(filePath);
+}
+
 void Surface::updateChannel(float radius, float color, float& sigmaS, float& sigmaA)
 {
 	if (radius <= 0.0f)

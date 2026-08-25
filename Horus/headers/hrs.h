@@ -255,7 +255,7 @@ class GeometryObject : public SceneObject {
 		virtual MeshLight* getMeshLight() { return nullptr; }
 
 		virtual void computeNormal() {}
-		virtual void computeTexture() {}
+		virtual void computeUV() {}
 
 		void setPositionUpdated(bool updated) { positionUpdated = updated; }
 		void setRotationUpdated(bool updated) { rotationUpdated = updated; }
@@ -270,6 +270,9 @@ class GeometryObject : public SceneObject {
 		bool checkPositionRotationWidthHeightUpdated() { return positionUpdated && rotationUpdated && widthUpdated && heightUpdated; }
 
 		virtual Vector3D<float> getNormal() { return Vector3D<float>(0.0f, 0.0f, 0.0f); };
+
+		virtual bool getHasVertexUV() { return false; }
+		virtual Point<float> getUV() { return Point<float>(); }
 
 		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) { return false; };
 
@@ -299,6 +302,7 @@ class GeometryObject : public SceneObject {
 		std::ifstream shaderFile;
 
 		std::string token;
+		std::string textureFilePathToken;
 
 		std::variant<Shader, Constant, Depth, Surface> shader;
 

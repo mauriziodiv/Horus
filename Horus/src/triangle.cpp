@@ -203,7 +203,7 @@ void Triangle::computeNormal()
 	normal.normalize();
 }
 
-void Triangle::computeTexture()
+void Triangle::computeUV()
 {
 	if (hasVertexUV == true)
 	{

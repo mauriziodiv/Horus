@@ -1,5 +1,6 @@
 #pragma once
 #include "shader.h"
+#include "texture.h"
 
 class BxDF : public Shader
 {
@@ -89,6 +90,11 @@ class Surface : public BxDF
 
 		Vector3D<float> getDiffuseColor()
 		{
+			if (diffuseColorTex.isLoaded())
+			{
+				return diffuseColorTex.sample(uv);
+			}
+
 			return diffuseColor;
 		}
 
@@ -176,6 +182,18 @@ class Surface : public BxDF
 			return subsurfaceRadius;
 		}
 
+		void setUV(Point<float> c)
+		{
+			uv = c;
+		}
+
+		Point<float> getUV()
+		{
+			return uv;
+		}
+
+		bool setDiffuseColorTex(const std::string& filePath);
+
 	private:
 		float diffuseGain;
 		Vector3D<float> diffuseColor;
@@ -183,8 +201,12 @@ class Surface : public BxDF
 		float refractionGain;
 		float IOR;
 		float subsurfaceGain;
+		
+		Point<float> uv;
 		Vector3D<float> subsurfaceColor;
 		Vector3D<float> subsurfaceRadius;
+
+		TextureSet diffuseColorTex;
 		
 		void updateChannel(float radius, float color, float& sigmaS, float& sigmaA);
 		void updateMedium();

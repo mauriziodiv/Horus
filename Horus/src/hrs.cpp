@@ -680,14 +680,33 @@ bool GeometryObject::parse()
 										{
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
-												std::stringstream s(token);
+												if (token != "T")
+												{
 
-												float x, y, z;
-												char comma;
+													std::stringstream s(token);
 
-												s >> x >> comma >> y >> comma >> z;
+													float x, y, z;
+													char comma;
 
-												p->setDiffuseColor(Vector3D<float>(x, y, z));
+													s >> x >> comma >> y >> comma >> z;
+
+													p->setDiffuseColor(Vector3D<float>(x, y, z));
+												}
+												else if (token == "T")
+												{
+													// open the file and read the texture.
+													textureFilePathToken.clear();
+													tokenSearch(shaderFile, '"', textureFilePathToken);
+													
+													if (!textureFilePathToken.empty())
+													{
+														if (!p->setDiffuseColorTex(textureFilePathToken))
+														{
+															std::cout << "Shader: could not load texture!" << std::endl;
+															p->setDiffuseColor(Vector3D<float>(1.0f, 1.0f, 1.0f));
+														}
+													}
+												}
 											}
 										}
 

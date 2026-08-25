@@ -51,8 +51,11 @@ class Triangle : public GeometryObject
 
 		virtual void setBoundingBox() override;
 		virtual void computeNormal() override;
-		virtual void computeTexture() override;
+		virtual void computeUV() override;
 		virtual Vector3D<float> getNormal() override;
+
+		virtual bool getHasVertexUV() override { return hasVertexUV; }
+		virtual Point<float> getUV() override { return uv; }
 
 		std::string_view getObjectName() override { return name; }
 
