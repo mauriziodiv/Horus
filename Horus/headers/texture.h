@@ -6,6 +6,7 @@
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImathBox.h>
+#include <filesystem>
 
 class Texture
 {

@@ -353,7 +353,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			{
 				diffuseGain = surface->getDiffuseGain();
 
-				// surface->setUV(closestHit->getUV())
+				surface->setUV(closestHit->getUV());
 				
 				diffuseColor = surface->getDiffuseColor();
 				roughness = surface->getRoughness();

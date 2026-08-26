@@ -24,7 +24,6 @@ bool Texture::load(const std::string& filePath)
 {
 	try
 	{
-
 		Imf::RgbaInputFile texture(filePath.c_str());
 
 		Imf::Array2D<Imf::Rgba> halfPixel;
@@ -113,7 +112,12 @@ bool TextureSet::load(const std::string& filePath)
 		{
 			std::string path = filePath;
 			path.replace(token, 6, std::to_string(udim));
-			//FROM HERE
+
+			if (!std::filesystem::exists(path))
+			{
+				continue;
+			}
+			
 			loadTile(udim, path);
 		}
 	}
@@ -123,5 +127,14 @@ bool TextureSet::load(const std::string& filePath)
 
 Vector3D<float> TextureSet::sample(Point<float> uv)
 {
-	return Vector3D<float>();
+	int udim = 1001 + int(std::floor(uv.x)) + 10 * int(std::floor(uv.y));
+
+	auto u = tiles.find(udim);
+
+	if (u == tiles.end())
+	{
+		return Vector3D<float>(1.0f, 1.0f, 1.0f);
+	}
+
+	return u->second.sample(uv);
 }
