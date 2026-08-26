@@ -135,6 +135,11 @@ class Surface : public BxDF
 
 		float getRoughness()
 		{
+			if (roughnessTex.isLoaded())
+			{
+				return roughnessTex.sample(uv).x;
+			}
+
 			return roughness;
 		}
 
@@ -155,6 +160,11 @@ class Surface : public BxDF
 
 		float getSubsurfaceGain()
 		{
+			if (subsurfaceGainTex.isLoaded())
+			{
+				return subsurfaceGainTex.sample(uv).x;
+			}
+
 			return subsurfaceGain;
 		}
 
@@ -193,6 +203,8 @@ class Surface : public BxDF
 		}
 
 		bool setDiffuseColorTex(const std::string& filePath);
+		bool setRoughnessTex(const std::string& filePath);
+		bool setSubsurfaceGainTex(const std::string& filePath);
 
 	private:
 		float diffuseGain;
@@ -207,6 +219,8 @@ class Surface : public BxDF
 		Vector3D<float> subsurfaceRadius;
 
 		TextureSet diffuseColorTex;
+		TextureSet roughnessTex;
+		TextureSet subsurfaceGainTex;
 		
 		void updateChannel(float radius, float color, float& sigmaS, float& sigmaA);
 		void updateMedium();

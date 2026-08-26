@@ -721,7 +721,25 @@ bool GeometryObject::parse()
 										{
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
-												p->setRoughness(std::stof(token));
+												if (token != "T")
+												{
+													p->setRoughness(std::stof(token));
+												}
+												else if (token == "T")
+												{
+													// open the file and read the texture.
+													textureFilePathToken.clear();
+													tokenSearch(shaderFile, '"', textureFilePathToken);
+
+													if (!textureFilePathToken.empty())
+													{
+														if (!p->setRoughnessTex(textureFilePathToken))
+														{
+															std::cout << "Shader: could not load texture!" << std::endl;
+															p->setRoughness(1.0f);
+														}
+													}
+												}
 											}
 										}
 
@@ -766,7 +784,24 @@ bool GeometryObject::parse()
 										{
 											if (auto* p = std::get_if<Surface>(&getShader()))
 											{
-												p->setSubsurfaceGain(std::stof(token));
+												if (token != "T")
+												{
+													p->setSubsurfaceGain(std::stof(token));
+												}
+												else if (token == "T")
+												{
+													// open the file and read the texture.
+													textureFilePathToken.clear();
+													tokenSearch(shaderFile, '"', textureFilePathToken);
+
+													if (!textureFilePathToken.empty())
+													{
+														if (!p->setSubsurfaceGainTex(textureFilePathToken))
+														{
+															std::cout << "Shader: could not load texture!" << std::endl;
+														}
+													}
+												}
 											}
 										}
 

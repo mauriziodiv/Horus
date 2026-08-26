@@ -5,6 +5,16 @@ bool Surface::setDiffuseColorTex(const std::string& filePath)
 	return diffuseColorTex.load(filePath);
 }
 
+bool Surface::setRoughnessTex(const std::string& filePath)
+{
+	return roughnessTex.load(filePath);
+}
+
+bool Surface::setSubsurfaceGainTex(const std::string& filePath)
+{
+	return subsurfaceGainTex.load(filePath);
+}
+
 void Surface::updateChannel(float radius, float color, float& sigmaS, float& sigmaA)
 {
 	if (radius <= 0.0f)
