@@ -38,7 +38,8 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"subsurface_gain", ShaderParameterType::SUBSURFACE_GAIN},
 	{"subsurface_color", ShaderParameterType::SUBSURFACE_COLOR},
 	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS},
-	{"subsurface_anisotropy", ShaderParameterType::SUBSURFACE_ANISOTROPY}
+	{"subsurface_anisotropy", ShaderParameterType::SUBSURFACE_ANISOTROPY},
+	{"normal_map", ShaderParameterType::NORMAL_MAP}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -851,7 +852,7 @@ bool GeometryObject::parse()
 
 										break;
 
-										case ShaderParameterType::SUBSURFACE_ANISOTROPY:
+									case ShaderParameterType::SUBSURFACE_ANISOTROPY:
 										token.clear();
 
 										tokenSearch(shaderFile, '/', token);
@@ -863,6 +864,31 @@ bool GeometryObject::parse()
 												p->setAnisotropy(std::stof(token));
 											}
 										}
+
+										break;
+
+									case ShaderParameterType::NORMAL_MAP:
+											token.clear();
+
+											tokenSearch(shaderFile, '/', token);
+
+											if (!token.empty() && token == "T")
+											{
+												if (auto* p = std::get_if<Surface>(&getShader()))
+												{
+													// open the file and read the texture.
+													textureFilePathToken.clear();
+													tokenSearch(shaderFile, '"', textureFilePathToken);
+
+													if (!textureFilePathToken.empty())
+													{
+														if (!p->setNormalMapTex(textureFilePathToken))
+														{
+															std::cout << "Shader: could not load texture!" << std::endl;
+														}
+													}
+												}
+											}
 
 										break;
 

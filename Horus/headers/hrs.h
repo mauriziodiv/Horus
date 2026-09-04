@@ -137,7 +137,8 @@ enum class ShaderParameterType {
 	SUBSURFACE_GAIN,
 	SUBSURFACE_COLOR,
 	SUBSURFACE_RADIUS,
-	SUBSURFACE_ANISOTROPY
+	SUBSURFACE_ANISOTROPY,
+	NORMAL_MAP
 };
 
 struct HitRecord
@@ -256,6 +257,11 @@ class GeometryObject : public SceneObject {
 
 		virtual void computeNormal() {}
 		virtual void computeUV() {}
+		virtual void computeTangents() {}
+
+		virtual bool getHasTangents() { return false; }
+		virtual Vector3D<float> getTangent() { return Vector3D<float>(0.0f, 0.0f, 0.0f); }
+		virtual Vector3D<float> getBitangent() { return Vector3D<float>(0.0f, 0.0f, 0.0f); }
 
 		void setPositionUpdated(bool updated) { positionUpdated = updated; }
 		void setRotationUpdated(bool updated) { rotationUpdated = updated; }

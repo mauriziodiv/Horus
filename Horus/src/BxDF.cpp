@@ -1,4 +1,32 @@
 #include "BxDF.h"
+#include "hrs.h"
+
+void Surface::computeNormal(GeometryObject& ch, Vector3D<float>& normal)
+{
+	Vector3D<float> normalSample;
+
+	if (ch.getHasTangents() && getNormalSample(normalSample))
+	{
+		Vector3D<float> T = ch.getTangent();
+		Vector3D<float> B = ch.getBitangent();
+
+		T = T - (normal * (T * normal));
+		T.normalize();
+
+		Vector3D<float> newB = normal | T;
+
+		if ((newB * B) < 0.0f)
+		{
+			newB = -newB;
+		}
+
+		B = newB;
+
+		normal = (T * normalSample.x) + (B * normalSample.y) + (normal * normalSample.z);
+		normal.normalize();
+	}
+
+}
 
 bool Surface::setDiffuseColorTex(const std::string& filePath)
 {
@@ -13,6 +41,11 @@ bool Surface::setRoughnessTex(const std::string& filePath)
 bool Surface::setSubsurfaceGainTex(const std::string& filePath)
 {
 	return subsurfaceGainTex.load(filePath);
+}
+
+bool Surface::setNormalMapTex(const std::string& filePath)
+{
+	return normalMapTex.load(filePath);
 }
 
 void Surface::updateChannel(float radius, float color, float& sigmaS, float& sigmaA)

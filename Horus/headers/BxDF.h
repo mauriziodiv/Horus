@@ -2,6 +2,8 @@
 #include "shader.h"
 #include "texture.h"
 
+class GeometryObject;
+
 class BxDF : public Shader
 {
 	public:
@@ -202,9 +204,25 @@ class Surface : public BxDF
 			return uv;
 		}
 
+		bool getNormalSample(Vector3D<float>& n)
+		{
+			if (!normalMapTex.isLoaded())
+			{
+				return false;
+			}
+
+			n = normalMapTex.sample(uv);
+			n = (n * 2.0f) - Vector3D<float>(1.0f, 1.0f, 1.0f);
+
+			return true;
+		}
+
+		void computeNormal(GeometryObject& ch, Vector3D<float>& normal);
+
 		bool setDiffuseColorTex(const std::string& filePath);
 		bool setRoughnessTex(const std::string& filePath);
 		bool setSubsurfaceGainTex(const std::string& filePath);
+		bool setNormalMapTex(const std::string& filePath);
 
 	private:
 		float diffuseGain;
@@ -221,6 +239,7 @@ class Surface : public BxDF
 		TextureSet diffuseColorTex;
 		TextureSet roughnessTex;
 		TextureSet subsurfaceGainTex;
+		TextureSet normalMapTex;
 		
 		void updateChannel(float radius, float color, float& sigmaS, float& sigmaA);
 		void updateMedium();

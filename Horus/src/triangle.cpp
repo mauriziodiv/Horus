@@ -218,3 +218,33 @@ Vector3D<float> Triangle::getNormal()
 {
 	return normal;
 }
+
+void Triangle::computeTangents()
+{
+	if (hasVertexUV == true)
+	{
+		Vector3D<float> edge_01 = vertices[1] - vertices[0];
+		Vector3D<float> edge_02 = vertices[2] - vertices[0];
+
+		float du_01 = vertexUV[1].x - vertexUV[0].x;
+		float du_02 = vertexUV[2].x - vertexUV[0].x;
+
+		float dv_01 = vertexUV[1].y - vertexUV[0].y;
+		float dv_02 = vertexUV[2].y - vertexUV[0].y;
+
+		float det = (du_01 * dv_02) - (du_02 * dv_01);
+
+		if (fabs(det) < uvEpsilon)
+		{
+			hasTangent = false;
+			return;
+		}
+
+		float r = 1.0f / det;
+
+		tangent = (edge_01 * dv_02 - edge_02 * dv_01) * r;
+		bitangent = (edge_02 * du_01 - edge_01 * du_02) * r;
+
+		hasTangent = true;
+	}
+}

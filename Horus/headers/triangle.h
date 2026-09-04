@@ -52,7 +52,12 @@ class Triangle : public GeometryObject
 		virtual void setBoundingBox() override;
 		virtual void computeNormal() override;
 		virtual void computeUV() override;
+		virtual void computeTangents() override;
 		virtual Vector3D<float> getNormal() override;
+
+		virtual bool getHasTangents() override { return hasTangent; }
+		virtual Vector3D<float> getTangent() override { return tangent; }
+		virtual Vector3D<float> getBitangent() override { return bitangent; }
 
 		virtual bool getHasVertexUV() override { return hasVertexUV; }
 		virtual Point<float> getUV() override { return uv; }
@@ -65,9 +70,13 @@ class Triangle : public GeometryObject
 
 	private:
 		float epsilon = 0.001f;
+		float uvEpsilon = 0.0001f;
 		
 		Vector3D<float> normal;
 		Point<float> uv;
+		Vector3D<float> tangent;
+		Vector3D<float> bitangent;
+		bool hasTangent = false;
 
 		static constexpr const char name[] = "Triangle";
 };

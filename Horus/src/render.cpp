@@ -332,6 +332,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			Vector3D<float> hitPoint = ray.getPointat(closestHit->hitRecord.t);
 			closestHit->computeNormal();
 			closestHit->computeUV();
+			closestHit->computeTangents();
 
 			float diffuseGain = 1.0f;
 			Vector3D<float> diffuseColor(1.0f, 1.0f, 1.0f);
@@ -344,6 +345,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			//Vector3D<float> subsurfaceColor(1.0f, 1.0f, 1.0f);
 			//Vector3D<float> subsurfaceRadius(1.0f, 1.0f, 1.0f);
 
+			Vector3D<float> normal = closestHit->getNormal();
+
 			Medium medium;
 
 			Vector3D<float> lightsContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
@@ -354,6 +357,31 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				diffuseGain = surface->getDiffuseGain();
 
 				surface->setUV(closestHit->getUV());
+
+				//normal = surface->getNormal(closestHit->getNormal());
+				surface->computeNormal(*closestHit, normal);
+				//Vector3D<float> normalSample;
+
+				//if (closestHit->getHasTangents() && surface->getNormalSample(normalSample))
+				//{
+				//	Vector3D<float> T = closestHit->getTangent();
+				//	Vector3D<float> B = closestHit->getBitangent();
+
+				//	T = T - (normal * (T * normal));
+				//	T.normalize();
+
+				//	Vector3D<float> newB = normal | T;
+
+				//	if ((newB * B) < 0.0f)
+				//	{
+				//		newB = -newB;
+				//	}
+
+				//	B = newB;
+
+				//	normal = (T * normalSample.x) + (B * normalSample.y) + (normal * normalSample.z);
+				//	normal.normalize();
+				//}
 				
 				diffuseColor = surface->getDiffuseColor();
 				roughness = surface->getRoughness();
@@ -418,8 +446,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					//}
 
 					Vector3D<float> shadowRayDir = lightPos - hitPoint;
-					Vector3D<float> surfaceNormal = closestHit->getNormal();
-					shadowRay.setOrigin(hitPoint + (surfaceNormal * epsilon));
+					Vector3D<float> geometricNormal = closestHit->getNormal();
+					shadowRay.setOrigin(hitPoint + (geometricNormal * epsilon));
 
 					distance = shadowRayDir.getLength();
 					shadowRayDir.normalize();
@@ -430,7 +458,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 					if (lightBVH == nullptr || lightBVH == areaLight || (meshLight != nullptr && lightBVH->getMeshLight() == meshLight))
 					{
-						float cos_surface = surfaceNormal * shadowRay.getDirection();
+						float cos_surface = normal * shadowRay.getDirection();
 						float cos_light = lightNormal * -shadowRay.getDirection();
 
 						if (cos_surface >= 0 && cos_light >= 0)
@@ -466,7 +494,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			// create new ray from hit point
 
 			Ray reflected = ray;
-			Vector3D<float> normal = closestHit->getNormal();
+			//Vector3D<float> normal = closestHit->getNormal();
 			reflected.reflect(normal);
 			Vector3D<float> reflectedDir = reflected.getDirection();
 
@@ -549,11 +577,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			if (refraction_gain < 1.0f)
 			{
 				Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
-				Vector3D<float> surfaceNormal = closestHit->getNormal();
+				Vector3D<float> surfaceNormal = normal;
 				Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
 				Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
 
-				Ray newRay(hitPoint + (surfaceNormal * epsilon), finalScatter);
+				Ray newRay(hitPoint + (closestHit->getNormal() * epsilon), finalScatter);
 
 				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1, false)) * diffuseGain * (1.0f - refraction_gain);
 			}
