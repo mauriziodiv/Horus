@@ -39,7 +39,8 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"subsurface_color", ShaderParameterType::SUBSURFACE_COLOR},
 	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS},
 	{"subsurface_anisotropy", ShaderParameterType::SUBSURFACE_ANISOTROPY},
-	{"normal_map", ShaderParameterType::NORMAL_MAP}
+	{"normal_map", ShaderParameterType::NORMAL_MAP},
+	{"normal_map_gain", ShaderParameterType::NORMAL_MAP_GAIN}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -889,6 +890,21 @@ bool GeometryObject::parse()
 													}
 												}
 											}
+
+										break;
+
+									case ShaderParameterType::NORMAL_MAP_GAIN:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setNormalMapGain(std::stof(token));
+											}
+										}
 
 										break;
 

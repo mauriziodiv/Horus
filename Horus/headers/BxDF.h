@@ -73,7 +73,7 @@ public:
 class Surface : public BxDF
 {
 	public:
-		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f) {}
+		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f), normalMapGain(1.0f) {}
 
 		void setDiffuseGain(float g)
 		{
@@ -214,7 +214,20 @@ class Surface : public BxDF
 			n = normalMapTex.sample(uv);
 			n = (n * 2.0f) - Vector3D<float>(1.0f, 1.0f, 1.0f);
 
+			n.x = n.x * normalMapGain;
+			n.y = n.y * normalMapGain;
+
 			return true;
+		}
+
+		void setNormalMapGain(float g)
+		{
+			normalMapGain = g;
+		}
+
+		float getNormalMapGain()
+		{
+			return normalMapGain;
 		}
 
 		void computeNormal(GeometryObject& ch, Vector3D<float>& normal);
@@ -231,6 +244,7 @@ class Surface : public BxDF
 		float refractionGain;
 		float IOR;
 		float subsurfaceGain;
+		float normalMapGain;
 		
 		Point<float> uv;
 		Vector3D<float> subsurfaceColor;
