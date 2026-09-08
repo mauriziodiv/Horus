@@ -15,6 +15,10 @@ class Texture
 		bool load(const std::string& filePath);
 		Vector3D<float> sample(Point<float> uv);
 		bool isLoaded() { return loaded; }
+		int getWidth() { return width; }
+		int getHeight() { return height; }
+		const Vector3D<float>& getPixel(int x, int y) { return pixels[y * width + x]; }
+		float getLuminance(int x, int y) { return (0.2126 * getPixel(x, y).x + 0.7152 * getPixel(x, y).y + 0.0722 * getPixel(x, y).z); };
 
 	private:
 		bool loaded;

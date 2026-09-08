@@ -600,15 +600,18 @@ class LightObject : public SceneObject {
 			std::cout << "intensity: " << intensity << std::endl;
 		}
 
+		virtual bool loadTexture(const std::string& filePath) { return false; };
+
 		float size;
 		float intensity;
 
 	private:
 
 		LightType lightType;
-
 		Vector3D<float> color;
-		
+
+	protected:
+		Texture texture;
 };
 
 class PointLightObject : public LightObject {
@@ -643,7 +646,18 @@ class DomeLightObject : public LightObject {
 			return name;
 		}
 
+		bool isAnalysisValid() { return analysisValid; }
+
+		virtual bool loadTexture(const std::string& filePath) override;
+
 	private:
+
+		void analyzeTexture();
+
+		std::vector<float> luminanceSum;
+		std::vector<float> rowSum;
+
+		bool analysisValid = false;
 
 		static constexpr const char name[] = "Dome Light";
 };
