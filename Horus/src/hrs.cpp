@@ -152,6 +152,12 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 						sceneObjects.back().get()->rotation = Vector3D<float>(x, y, z);
 
+						//if we have a dome call dome->rotate
+						if (sceneObjects.back().get()->getType() == SceneObjectType::LIGHT)
+						{
+							static_cast<LightObject*>(sceneObjects.back().get())->rotateDome();
+						}
+
 						if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY) { static_cast<GeometryObject*>(sceneObjects.back().get())->setPositionUpdated(true); }
 
 						if (sceneObjects.back().get()->getType() == SceneObjectType::GEOMETRY)
@@ -277,6 +283,24 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 						std::stringstream s(token);
 
+						if (token == "T")
+						{
+								std::string texturePath;
+
+								tokenSearch(file, '"', texturePath);
+
+								if (lightObject &&!texturePath.empty() && lightObject->loadTexture(texturePath))
+								{
+									lightObject->setColor(Vector3D<float>(1.0f, 1.0f, 1.0f));
+								}
+								else
+								{
+									std::cout << "Dome: could not load texture!" << std::endl;
+								}
+
+							break;
+						}
+
 						float x, y, z;
 						char comma;
 
@@ -286,13 +310,6 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 						if (lightObject)
 						{
-							//std::stringstream s(token);
-
-							//float x, y, z;
-							//char comma;
-
-							//s >> x >> comma >> y >> comma >> z;
-
 							lightObject->setColor(col);
 						}
 						else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(sceneObjects.back().get()))
@@ -971,6 +988,81 @@ bool DomeLightObject::loadTexture(const std::string& filePath)
 	analyzeTexture();
 
 	return true;
+}
+
+Vector3D<float> DomeLightObject::getRadiance(const Vector3D<float>& dir)
+{
+	Vector3D<float> d = worldDome * dir;
+	d.normalize();
+
+	Point uv = vectorToUv(d);
+
+	return (texture.sample(uv) % getColor() * getIntensity());
+}
+
+void DomeLightObject::rotateDome()
+{
+	domeWorld = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
+
+	worldDome = Matrix4X4<float>::RotationZ(-rotation.z * DegreeToRadians) * Matrix4X4<float>::RotationX(-rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationY(-rotation.y * DegreeToRadians);
+}
+
+DomeSample DomeLightObject::sampleDomeLight(float r1, float r2)
+{
+	
+	DomeSample sample;
+
+	// point 5 — fallback first, so nothing below can touch an empty table
+	if (!analysisValid || rowSum.empty())
+	{
+		float y = 1.0f - (2.0f * r1);
+		float r = std::sqrt(std::max(0.0f, 1.0f - (y * y)));
+		float phi = 2.0f * PI * r2;
+
+		sample.direction = Vector3D<float>(r * std::cos(phi), y, r * std::sin(phi));
+		sample.radiance = getColor() * getIntensity();
+		sample.pdf = 1.0f / (4.0f * PI);
+
+		return sample;
+	}
+
+	size_t width = texture.getWidth();
+	size_t height = texture.getHeight();
+
+	// point 2 — two binary searches
+	float grandTotal = rowSum.back();
+
+	float target1 = r1 * grandTotal;
+	size_t j = std::upper_bound(rowSum.begin(), rowSum.end(), target1) - rowSum.begin();
+	if (j >= height) { j = height - 1; }
+
+	size_t rowStart = j * width;
+	float rowTotal = luminanceSum[rowStart + width - 1];
+
+	if (rowTotal <= 0.0f)
+	{
+		sample.pdf = 0.0f;
+		return sample;
+	}
+
+	float target2 = r2 * rowTotal;
+	auto first = luminanceSum.begin() + rowStart;
+	size_t i = std::upper_bound(first, first + width, target2) - first;
+	if (i >= width) { i = width - 1; }
+
+	// point 3 — texel to direction
+	float u = (i + 0.5f) / width;
+	float v = 1.0f - ((j + 0.5f) / height);
+
+	Point<float> uv(u, v);
+
+	sample.direction = domeWorld * uvToVector(uv);
+	sample.radiance = texture.sample(uv) % getColor() * getIntensity();
+
+	// point 4 — pdf per steradian
+	sample.pdf = texture.getLuminance(static_cast<int>(i), static_cast<int>(j)) * width * height / (2.0f * PI * PI * grandTotal);
+
+	return sample;
 }
 
 void DomeLightObject::analyzeTexture()

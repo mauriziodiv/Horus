@@ -121,6 +121,13 @@ inline BoundingBox operator+(const BoundingBox& a, const BoundingBox& b)
 	return c += b;
 }
 
+struct DomeSample
+{
+	Vector3D<float> direction;
+	Vector3D<float> radiance;
+	float pdf = 0.0f;
+};
+
 enum class ShaderType {
 	CONSTANT,
 	DEPTH,
@@ -601,6 +608,9 @@ class LightObject : public SceneObject {
 		}
 
 		virtual bool loadTexture(const std::string& filePath) { return false; };
+		virtual Vector3D<float> getRadiance(const Vector3D<float>& dir) { return color * intensity; };
+
+		virtual void rotateDome() {};
 
 		float size;
 		float intensity;
@@ -649,6 +659,10 @@ class DomeLightObject : public LightObject {
 		bool isAnalysisValid() { return analysisValid; }
 
 		virtual bool loadTexture(const std::string& filePath) override;
+		virtual Vector3D<float> getRadiance(const Vector3D<float>& dir) override;
+
+		virtual void rotateDome() override;
+		DomeSample sampleDomeLight(float r1, float r2);
 
 	private:
 
@@ -658,6 +672,9 @@ class DomeLightObject : public LightObject {
 		std::vector<float> rowSum;
 
 		bool analysisValid = false;
+
+		Matrix4X4<float> domeWorld;
+		Matrix4X4<float> worldDome;
 
 		static constexpr const char name[] = "Dome Light";
 };

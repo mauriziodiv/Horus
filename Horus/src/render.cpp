@@ -476,6 +476,30 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				}
 			}
 
+			// Dome light sampling
+			for (LightObject* light : lights)
+			{
+				if (light->getLightType() != LightType::DOME) { continue; }
+
+				float epsilon = 0.001f;
+
+				DomeSample s = static_cast<DomeLightObject*>(light)->sampleDomeLight(unitRandom.Generate(), unitRandom.Generate());
+
+				if (s.pdf <= 0.0f) { continue; }
+
+				float cos_surface = normal * s.direction;
+
+				if (cos_surface <= 0.0f) { continue; }
+
+				Ray shadowRay(hitPoint + (closestHit->getNormal() * epsilon), s.direction);
+
+				if (bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax()) == nullptr)
+				{
+					//color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / s.pdf;
+					color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI);
+				}
+			}
+
 			if (includeEmission)
 			{
 				if (AreaLight* al = dynamic_cast<AreaLight*>(closestHit))
@@ -589,12 +613,15 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 	}
 	else
 	{
-		//background color
-		for (LightObject* light : lights)
+		if (includeEmission)
 		{
-			if (light->getLightType() == LightType::DOME)
+			//background color
+			for (LightObject* light : lights)
 			{
-				color += light->getColor() * light->getIntensity();
+				if (light->getLightType() == LightType::DOME)
+				{
+					color += light->getRadiance(ray.getDirection());
+				}
 			}
 		}
 	}

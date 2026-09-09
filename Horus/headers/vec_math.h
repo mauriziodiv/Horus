@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
 
 constexpr float PI = 3.14159265358979323846f;
 constexpr float DegreeToRadians = PI / 180.0f;
@@ -430,3 +431,28 @@ template <typename T> class Matrix4X4
 	private:
 		T m4x4[4][4];
 };
+
+inline Point<float> vectorToUv(const Vector3D<float>& d)
+{
+	float tetha = std::acos(std::clamp(d.y, -1.0f, 1.0f));
+	float phi = std::atan2(d.x, -d.z);
+
+	float u = 0.5f + (phi / (2.0f * PI));
+	float v = 1.0f - (tetha / PI);
+
+	return Point<float>(u, v);
+}
+
+inline Vector3D<float> uvToVector(const Point<float>& uv)
+{
+	float tetha = (1.0f - uv.y) * PI;
+	float phi = (uv.x - 0.5f) * (2.0f * PI);
+
+	float sinTetha = std::sin(tetha);
+
+	float x = sinTetha * std::sin(phi);
+	float y = std::cos(tetha);
+	float z = -sinTetha * std::cos(phi);
+
+	return Vector3D<float>(x, y, z);
+}
