@@ -396,9 +396,10 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				medium = surface->getMedium();
 			}
 
+			bool isBelowRoughness = unitRandom.Generate() < roughness;
 			// Area and meshLight light sampling
 			// if (!areaLights.empty() || !meshLights.empty())
-			if (!areaLights.empty() || !meshLights.empty())
+			if (isBelowRoughness && (!areaLights.empty() || !meshLights.empty()))
 			{
 				//float rnd = unitRandom.Generate() * areaLights.size();
 				AreaLight* areaLight = nullptr;
@@ -479,6 +480,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			// Dome light sampling
 			for (LightObject* light : lights)
 			{
+				if (!isBelowRoughness) { continue; }
+
 				if (light->getLightType() != LightType::DOME) { continue; }
 
 				float epsilon = 0.001f;
@@ -600,14 +603,29 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			}
 			if (refraction_gain < 1.0f)
 			{
-				Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
-				Vector3D<float> surfaceNormal = normal;
-				Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
-				Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
+				Vector3D<float> newDir;
+				bool passEmission;
 
-				Ray newRay(hitPoint + (closestHit->getNormal() * epsilon), finalScatter);
+				if (isBelowRoughness)
+				{
+					Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
+					Vector3D<float> surfaceNormal = normal;
 
-				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1, false)) * diffuseGain * (1.0f - refraction_gain);
+					newDir = toWorld(rndDir, surfaceNormal);
+					passEmission = false;
+
+					//Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
+					//Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
+				}
+				else
+				{
+					newDir = reflectedDir;
+					passEmission = true;
+				}
+
+				Ray newRay(hitPoint + (closestHit->getNormal() * epsilon), newDir);
+
+				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1, passEmission)) * diffuseGain * (1.0f - refraction_gain);
 			}
 		}
 	}
