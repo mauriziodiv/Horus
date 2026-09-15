@@ -92,7 +92,7 @@ void computePlaneNormalCheck(GeometryObject& geometryObject)
 {
 	if (geometryObject.checkPositionRotationWidthHeightUpdated() && geometryObject.getGeometryType() != GeometryType::SPHERE)
 	{
-		geometryObject.computeNormal();
+		geometryObject.computeOrientation();
 	}
 }
 
@@ -204,7 +204,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
 						{
-							static_cast<GeometryObject*>(sceneObjects.back().get())->computeNormal();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->computeOrientation();
 						}
 					}
 					break;
@@ -228,7 +228,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 						if (static_cast<GeometryObject*>(sceneObjects.back().get())->checkPositionRotationWidthHeightUpdated() && static_cast<GeometryObject*>(sceneObjects.back().get())->getGeometryType() != GeometryType::SPHERE)
 						{
-							static_cast<GeometryObject*>(sceneObjects.back().get())->computeNormal();
+							static_cast<GeometryObject*>(sceneObjects.back().get())->computeOrientation();
 						}
 					}
 					break;
@@ -966,7 +966,7 @@ PlaneObject::PlaneObject() : GeometryObject(GeometryType::PLANE)
 	rotation = Vector3D<float>(0.0f, 0.0f, 0.0f);
 }
 
-void PlaneObject::computeNormal()
+void PlaneObject::computeOrientation()
 {
 	this->R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
 	

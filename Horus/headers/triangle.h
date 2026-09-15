@@ -35,7 +35,7 @@ class Triangle : public GeometryObject
 
 		//void findVertices(int mIndex, int tIndex);
 
-		virtual bool rayIntersection(Ray &ray, float tMin, float tMax) override;
+		virtual bool rayIntersection(Ray &ray, float tMin, float tMax, HitRecord& hit) override;
 
 		int meshIndex;
 		int triangleIndex;
@@ -50,17 +50,15 @@ class Triangle : public GeometryObject
 		bool hasVertexUV = false;
 
 		virtual void setBoundingBox() override;
-		virtual void computeNormal() override;
-		virtual void computeUV() override;
-		virtual void computeTangents() override;
-		virtual Vector3D<float> getNormal() override;
+		virtual Vector3D<float> computeNormal(const HitRecord& hit) override;
+		virtual Point<float> computeUV(const HitRecord& hit) override;
+		virtual void computeTangents();
 
 		virtual bool getHasTangents() override { return hasTangent; }
 		virtual Vector3D<float> getTangent() override { return tangent; }
 		virtual Vector3D<float> getBitangent() override { return bitangent; }
 
 		virtual bool getHasVertexUV() override { return hasVertexUV; }
-		virtual Point<float> getUV() override { return uv; }
 
 		std::string_view getObjectName() override { return name; }
 
@@ -72,8 +70,6 @@ class Triangle : public GeometryObject
 		float epsilon = 0.001f;
 		float uvEpsilon = 0.0001f;
 		
-		Vector3D<float> normal;
-		Point<float> uv;
 		Vector3D<float> tangent;
 		Vector3D<float> bitangent;
 		bool hasTangent = false;

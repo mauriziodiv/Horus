@@ -576,10 +576,12 @@ void BVH::buildBVH(std::vector<GeometryObject*>& objects)
 }
 
 // Traverses the BVH tree to find the closest intersection of a ray with the geometry objects. Returns a pointer to the closest hit object, or nullptr if no intersection is found.
-GeometryObject* BVH::traversal(Ray& ray, float tMin, float tMax)
+GeometryObject* BVH::traversal(Ray& ray, float tMin, float tMax, HitRecord& hit)
 {
 	GeometryObject* closestHit = nullptr;
 	float closestT = tMax;
+
+	HitRecord tempHit;
 
 	int32_t stack[64];
 	int32_t stackIndex = 0;
@@ -597,10 +599,11 @@ GeometryObject* BVH::traversal(Ray& ray, float tMin, float tMax)
 				{
 					GeometryObject* obj = orderedPrimitives[node.getPrimitiveOffset() + i];
 
-					if (obj->rayIntersection(ray, tMin, closestT))
+					if (obj->rayIntersection(ray, tMin, closestT, tempHit))
 					{
-						closestT = obj->hitRecord.t;
+						closestT = tempHit.t;
 						closestHit = obj;
+						hit = tempHit;
 					}
 				}
 

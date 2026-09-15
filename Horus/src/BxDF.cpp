@@ -1,11 +1,11 @@
 #include "BxDF.h"
 #include "hrs.h"
 
-void Surface::computeNormal(GeometryObject& ch, Vector3D<float>& normal)
+void Surface::computeNormal(GeometryObject& ch, const Point<float>& uv, Vector3D<float>& normal)
 {
 	Vector3D<float> normalSample;
 
-	if (ch.getHasTangents() && getNormalSample(normalSample))
+	if (ch.getHasTangents() && getNormalSample(uv, normalSample))
 	{
 		Vector3D<float> T = ch.getTangent();
 		Vector3D<float> B = ch.getBitangent();

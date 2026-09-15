@@ -90,7 +90,7 @@ class Surface : public BxDF
 			diffuseColor = col;
 		}
 
-		Vector3D<float> getDiffuseColor()
+		Vector3D<float> getDiffuseColor(const Point<float>& uv)
 		{
 			if (diffuseColorTex.isLoaded())
 			{
@@ -135,7 +135,7 @@ class Surface : public BxDF
 			IOR = ior;
 		}
 
-		float getRoughness()
+		float getRoughness(const Point<float>& uv)
 		{
 			if (roughnessTex.isLoaded())
 			{
@@ -160,7 +160,7 @@ class Surface : public BxDF
 			subsurfaceGain = g;
 		}
 
-		float getSubsurfaceGain()
+		float getSubsurfaceGain(const Point<float>& uv)
 		{
 			if (subsurfaceGainTex.isLoaded())
 			{
@@ -194,17 +194,7 @@ class Surface : public BxDF
 			return subsurfaceRadius;
 		}
 
-		void setUV(Point<float> c)
-		{
-			uv = c;
-		}
-
-		Point<float> getUV()
-		{
-			return uv;
-		}
-
-		bool getNormalSample(Vector3D<float>& n)
+		bool getNormalSample(const Point<float>& uv, Vector3D<float>& n)
 		{
 			if (!normalMapTex.isLoaded())
 			{
@@ -230,7 +220,7 @@ class Surface : public BxDF
 			return normalMapGain;
 		}
 
-		void computeNormal(GeometryObject& ch, Vector3D<float>& normal);
+		void computeNormal(GeometryObject& ch, const Point<float>& uv, Vector3D<float>& normal);
 
 		bool setDiffuseColorTex(const std::string& filePath);
 		bool setRoughnessTex(const std::string& filePath);
@@ -246,7 +236,6 @@ class Surface : public BxDF
 		float subsurfaceGain;
 		float normalMapGain;
 		
-		Point<float> uv;
 		Vector3D<float> subsurfaceColor;
 		Vector3D<float> subsurfaceRadius;
 

@@ -10,6 +10,12 @@ float UnitRandom::Generate()
 	return dis(gen);
 }
 
+void UnitRandom::seed(uint32_t s)
+{
+	gen.seed(s);
+	dis.reset();
+}
+
 Sampler::Sampler()
 {
 

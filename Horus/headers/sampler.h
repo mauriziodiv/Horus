@@ -10,6 +10,7 @@ class UnitRandom
 
 		UnitRandom();
 		float Generate();
+		void seed(uint32_t s);
 
 	private:
 

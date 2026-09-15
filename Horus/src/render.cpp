@@ -65,14 +65,16 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 		float rnd = unitRandom.Generate();
 		float tFlight = -std::log(1.0f - rnd) / sigmaTHero;
 
-		GeometryObject* boundaryHit = bvh.traversal(currentRay, currentRay.getTMin(), currentRay.getTMax());
+		HitRecord boundaryRecord;
+
+		GeometryObject* boundaryHit = bvh.traversal(currentRay, currentRay.getTMin(), currentRay.getTMax(), boundaryRecord);
 
 		if (boundaryHit == nullptr)
 		{
 			return radiance + (subsurfaceColor % rayPath(currentRay, bvh, nBounces));
 		}
 
-		float tBoundary = boundaryHit->hitRecord.t;
+		float tBoundary = boundaryRecord.t;
 
 		if (tFlight >= tBoundary)
 		{
@@ -87,8 +89,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 			subsurfaceColor = subsurfaceColor % boundaryWeight;
 
-			boundaryHit->computeNormal();
-			Vector3D<float> normal = boundaryHit->getNormal();
+			Vector3D<float> normal = boundaryHit->computeNormal(boundaryRecord);
 			
 			Vector3D<float> dir = exitDir;
 			dir.normalize();
@@ -176,11 +177,13 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 			Ray toBoundary(scatterPoint, lightDir);
 
-			GeometryObject* boundaryHit = bvh.traversal(toBoundary, toBoundary.getTMin(), toBoundary.getTMax());
+			HitRecord toBoundaryRecord;
+
+			GeometryObject* boundaryHit = bvh.traversal(toBoundary, toBoundary.getTMin(), toBoundary.getTMax(), toBoundaryRecord);
 
 			if (boundaryHit != nullptr)
 			{
-				float tBoundaryHit = boundaryHit->hitRecord.t;
+				float tBoundaryHit = toBoundaryRecord.t;
 				Vector3D<float> pointBoundaryHit = toBoundary.getPointat(tBoundaryHit);
 				Vector3D<float> Tr;// = std::exp(-sigmaTHero * tBoundaryHit);
 
@@ -195,7 +198,9 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 					Ray shadowRay(pointBoundaryHit + (lightDir * epsilon), lightDir);
 					shadowRay.setTMax((distance - tBoundaryHit) - epsilon);
 
-					GeometryObject* occlusion = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax());
+					HitRecord shadowHit;
+
+					GeometryObject* occlusion = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit);
 
 					if (occlusion == nullptr || occlusion == areaLight || (meshLight != nullptr && occlusion->getMeshLight() == meshLight))
 					{
@@ -301,7 +306,10 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
 Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission)
 {
-	GeometryObject* closestHit = bvh.traversal(ray, ray.getTMin(), ray.getTMax());
+
+	HitRecord hit;
+
+	GeometryObject* closestHit = bvh.traversal(ray, ray.getTMin(), ray.getTMax(), hit);
 	float closestT = ray.getTMax();
 
 	Vector3D<float> color(0.0f, 0.0f, 0.0f);
@@ -318,7 +326,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		}
 		else if (std::holds_alternative<Depth>(shader))
 		{
-			color = Vector3D<float>(1.0f / closestHit->hitRecord.t, 1.0f / closestHit->hitRecord.t, 1.0f / closestHit->hitRecord.t);
+			color = Vector3D<float>(1.0f / hit.t, 1.0f / hit.t, 1.0f / hit.t);
 
 			return color;
 		}
@@ -329,10 +337,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		}
 		else
 		{
-			Vector3D<float> hitPoint = ray.getPointat(closestHit->hitRecord.t);
-			closestHit->computeNormal();
-			closestHit->computeUV();
-			closestHit->computeTangents();
+			Vector3D<float> hitPoint = ray.getPointat(hit.t);
+			Vector3D<float> geometricNormal = closestHit->computeNormal(hit);
+			Point<float> uv = closestHit->computeUV(hit);
 
 			float diffuseGain = 1.0f;
 			Vector3D<float> diffuseColor(1.0f, 1.0f, 1.0f);
@@ -345,7 +352,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			//Vector3D<float> subsurfaceColor(1.0f, 1.0f, 1.0f);
 			//Vector3D<float> subsurfaceRadius(1.0f, 1.0f, 1.0f);
 
-			Vector3D<float> normal = closestHit->getNormal();
+			Vector3D<float> normal = geometricNormal;
 
 			Medium medium;
 
@@ -356,10 +363,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			{
 				diffuseGain = surface->getDiffuseGain();
 
-				surface->setUV(closestHit->getUV());
-
 				//normal = surface->getNormal(closestHit->getNormal());
-				surface->computeNormal(*closestHit, normal);
+				surface->computeNormal(*closestHit, uv, normal);
 				//Vector3D<float> normalSample;
 
 				//if (closestHit->getHasTangents() && surface->getNormalSample(normalSample))
@@ -383,13 +388,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				//	normal.normalize();
 				//}
 				
-				diffuseColor = surface->getDiffuseColor();
-				roughness = surface->getRoughness();
+				diffuseColor = surface->getDiffuseColor(uv);
+				roughness = surface->getRoughness(uv);
 
 				refraction_gain = surface->getRefractionGain();
 				IOR = surface->getIOR();
 
-				subsurfaceGain = surface->getSubsurfaceGain();
+				subsurfaceGain = surface->getSubsurfaceGain(uv);
 				//subsurfaceColor = surface->getSubsurfaceColor();
 				//subsurfaceRadius = surface->getSubsurfaceRadius();
 
@@ -447,7 +452,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					//}
 
 					Vector3D<float> shadowRayDir = lightPos - hitPoint;
-					Vector3D<float> geometricNormal = closestHit->getNormal();
 					shadowRay.setOrigin(hitPoint + (geometricNormal * epsilon));
 
 					distance = shadowRayDir.getLength();
@@ -455,7 +459,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					shadowRay.setDirection(shadowRayDir);
 					shadowRay.setTMax(distance - epsilon);
 
-					GeometryObject* lightBVH = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax());
+					HitRecord shadowHit;
+
+					GeometryObject* lightBVH = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit);
 
 					if (lightBVH == nullptr || lightBVH == areaLight || (meshLight != nullptr && lightBVH->getMeshLight() == meshLight))
 					{
@@ -494,9 +500,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				if (cos_surface <= 0.0f) { continue; }
 
-				Ray shadowRay(hitPoint + (closestHit->getNormal() * epsilon), s.direction);
+				Ray shadowRay(hitPoint + (geometricNormal * epsilon), s.direction);
 
-				if (bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax()) == nullptr)
+				HitRecord shadowHit;
+
+				if (bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit) == nullptr)
 				{
 					//color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / s.pdf;
 					color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI);
@@ -623,7 +631,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					passEmission = true;
 				}
 
-				Ray newRay(hitPoint + (closestHit->getNormal() * epsilon), newDir);
+				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
 				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1, passEmission)) * diffuseGain * (1.0f - refraction_gain);
 			}

@@ -17,6 +17,9 @@ class Integrator
 		std::vector<LightObject*>& getLights() { return lights; }
 		std::vector<AreaLight*>& getAreaLights() { return areaLights; }
 
+		void seed(uint32_t s) { unitRandom.seed(s); }
+		UnitRandom& getUnitRandom() { return unitRandom; }
+
 	private:
 
 		std::vector<LightObject*> lights;

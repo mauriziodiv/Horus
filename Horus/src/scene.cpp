@@ -269,6 +269,8 @@ void Scene::render()
 	{
 		for (int j = 0; j < width; ++j)
 		{
+			integrator.seed(static_cast<uint32_t>(i * (int)width + j));
+
 			float u = (float)j / (width - 1);
 			float v = (float)i / (height - 1);
 
@@ -280,9 +282,9 @@ void Scene::render()
 
 			for (size_t k = 0; k < numberOfSamples; ++k)
 			{
-				float x = (originalRay.getDirection().x + (unitRandom.Generate() - 0.5f) / width);
-				float y = (originalRay.getDirection().y + (unitRandom.Generate() - 0.5f) / height);
-				float z = (originalRay.getDirection().z + (unitRandom.Generate() - 0.5f) / width);
+				float x = (originalRay.getDirection().x + (integrator.getUnitRandom().Generate() - 0.5f) / width);
+				float y = (originalRay.getDirection().y + (integrator.getUnitRandom().Generate() - 0.5f) / height);
+				float z = (originalRay.getDirection().z + (integrator.getUnitRandom().Generate() - 0.5f) / width);
 
 				ray.setDirection(Vector3D<float>(x, y, z));
 

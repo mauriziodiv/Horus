@@ -51,8 +51,6 @@ class Scene {
 		Output output;
 		std::string_view filePathWrite;
 
-		UnitRandom unitRandom;
-
 		bool gammaCorrectionSet = false;
 		GammaCorrection gammaCorrection = GammaCorrection::GAMMA2;
 

@@ -62,9 +62,11 @@ Triangle::Triangle(const TriangleMesh* mesh, int tIndex) : GeometryObject(Geomet
 		vertexUV[1] = Point<float>(0.0f, 0.0f);
 		vertexUV[2] = Point<float>(0.0f, 0.0f);
 	}
+
+	computeTangents();
 }
 
-bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
+bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax, HitRecord& hit)
 {
 	// Move the ray to the origin
 	Ray originRay;
@@ -154,13 +156,13 @@ bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax)
 		return false;
 	}
 
-	hitRecord.t = t;
-	hitRecord.hitPoint = ray.getPointat(t);
-	hitRecord.front = (det > 0);
-	hitRecord.back = (det < 0);
-	hitRecord.b0 = b0;
-	hitRecord.b1 = b1;
-	hitRecord.b2 = b2;
+	hit.t = t;
+	hit.hitPoint = ray.getPointat(t);
+	hit.front = (det > 0);
+	hit.back = (det < 0);
+	hit.b0 = b0;
+	hit.b1 = b1;
+	hit.b2 = b2;
 
 	return true;
 }
@@ -182,13 +184,15 @@ void Triangle::setBoundingBox()
 	boundingBox.computeCentroid();
 }
 
-void Triangle::computeNormal()
+Vector3D<float> Triangle::computeNormal(const HitRecord& hit)
 {
+	Vector3D<float> normal;
+
 	if (hasVertexNormals == true)
 	{
-		float x = (vertexNormals[0].x * hitRecord.b0) + (vertexNormals[1].x * hitRecord.b1) + (vertexNormals[2].x * hitRecord.b2);
-		float y = (vertexNormals[0].y * hitRecord.b0) + (vertexNormals[1].y * hitRecord.b1) + (vertexNormals[2].y * hitRecord.b2);
-		float z = (vertexNormals[0].z * hitRecord.b0) + (vertexNormals[1].z * hitRecord.b1) + (vertexNormals[2].z * hitRecord.b2);
+		float x = (vertexNormals[0].x * hit.b0) + (vertexNormals[1].x * hit.b1) + (vertexNormals[2].x * hit.b2);
+		float y = (vertexNormals[0].y * hit.b0) + (vertexNormals[1].y * hit.b1) + (vertexNormals[2].y * hit.b2);
+		float z = (vertexNormals[0].z * hit.b0) + (vertexNormals[1].z * hit.b1) + (vertexNormals[2].z * hit.b2);
 
 		normal = Vector3D<float>(x, y, z);
 	}
@@ -201,22 +205,20 @@ void Triangle::computeNormal()
 	}
 
 	normal.normalize();
+
+	return normal;
 }
 
-void Triangle::computeUV()
+Point<float> Triangle::computeUV(const HitRecord& hit)
 {
 	if (hasVertexUV == true)
 	{
-		float u = (vertexUV[0].x * hitRecord.b0) + (vertexUV[1].x * hitRecord.b1) + (vertexUV[2].x * hitRecord.b2);
-		float v = (vertexUV[0].y * hitRecord.b0) + (vertexUV[1].y * hitRecord.b1) + (vertexUV[2].y * hitRecord.b2);
+		float u = (vertexUV[0].x * hit.b0) + (vertexUV[1].x * hit.b1) + (vertexUV[2].x * hit.b2);
+		float v = (vertexUV[0].y * hit.b0) + (vertexUV[1].y * hit.b1) + (vertexUV[2].y * hit.b2);
 
-		uv = Point<float>(u, v);
+		return  Point<float>(u, v);
 	}
-}
-
-Vector3D<float> Triangle::getNormal()
-{
-	return normal;
+	return Point<float>();
 }
 
 void Triangle::computeTangents()

@@ -263,9 +263,9 @@ class GeometryObject : public SceneObject {
 
 		virtual MeshLight* getMeshLight() { return nullptr; }
 
-		virtual void computeNormal() {}
-		virtual void computeUV() {}
-		virtual void computeTangents() {}
+		virtual Vector3D<float> computeNormal(const HitRecord& hit) { return Vector3D<float>(0.0f, 0.0f, 0.0f); }
+		virtual void computeOrientation() {}
+		virtual Point<float> computeUV(const HitRecord& hit) { return Point<float>(); }
 
 		virtual bool getHasTangents() { return false; }
 		virtual Vector3D<float> getTangent() { return Vector3D<float>(0.0f, 0.0f, 0.0f); }
@@ -283,19 +283,13 @@ class GeometryObject : public SceneObject {
 
 		bool checkPositionRotationWidthHeightUpdated() { return positionUpdated && rotationUpdated && widthUpdated && heightUpdated; }
 
-		virtual Vector3D<float> getNormal() { return Vector3D<float>(0.0f, 0.0f, 0.0f); };
-
 		virtual bool getHasVertexUV() { return false; }
-		virtual Point<float> getUV() { return Point<float>(); }
 
-		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) { return false; };
+		virtual bool rayIntersection(Ray& ray, float tMin, float tMax, HitRecord& hit) { return false; };
 
 		bool linkShader(std::string& shaderFilePath);
 
 		std::variant<Shader, Constant, Depth, Surface>& getShader() { return shader; }
-
-		bool getHitRecordFront() { return hitRecord.front; }
-		bool getHitRecordBack() { return hitRecord.back; }
 
 		void createMorton() { morton.code = computeMorton(boundingBox.getCentroid()); }
 
@@ -306,7 +300,6 @@ class GeometryObject : public SceneObject {
 		virtual std::vector<GeometryObject*> getTriangles() { return { this}; }
 
 		float size;
-		HitRecord hitRecord;
 
 		BoundingBox boundingBox;
 
@@ -336,7 +329,7 @@ class SphereObject : public GeometryObject {
 
 	public:
 
-		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE), normal(0.0f, 0.0f, 0.0f) { GeometryObject::size = r; setBoundingBox(); }
+		SphereObject(float r = 1.0f) : GeometryObject(GeometryType::SPHERE) { GeometryObject::size = r; setBoundingBox(); }
 		
 		std::string_view getObjectName() override
 		{
@@ -354,14 +347,11 @@ class SphereObject : public GeometryObject {
 			boundingBox.computeCentroid();
 		}
 
-		virtual void computeNormal() override
+		virtual Vector3D<float> computeNormal(const HitRecord& hit) override
 		{
-			normal = hitRecord.hitPoint - position;
+			Vector3D<float> normal = hit.hitPoint - position;
 			normal.normalize();
-		}
 
-		virtual Vector3D<float> getNormal() override
-		{
 			return normal;
 		}
 
@@ -373,7 +363,7 @@ class SphereObject : public GeometryObject {
 		}
 
 		// Implements ray-sphere intersection using the quadratic formula.
-		bool rayIntersection(Ray& ray, float tMin, float tMax) override
+		bool rayIntersection(Ray& ray, float tMin, float tMax, HitRecord& hit) override
 		{
 			float a = ray.direction * ray.direction;
 
@@ -397,17 +387,17 @@ class SphereObject : public GeometryObject {
 
 			if (t1 > tMin && t1 < tMax)
 			{
-				hitRecord.front = true;
-				hitRecord.hitPoint = ray.getPointat(t1);
-				hitRecord.t = t1;
+				hit.front = true;
+				hit.hitPoint = ray.getPointat(t1);
+				hit.t = t1;
 				return true;
 			}
 
 			if (t2 > tMin && t2 < tMax)
 			{
-				hitRecord.front = false;
-				hitRecord.hitPoint = ray.getPointat(t2);
-				hitRecord.t = t2;
+				hit.front = false;
+				hit.hitPoint = ray.getPointat(t2);
+				hit.t = t2;
 
 				return true;
 			}
@@ -416,8 +406,6 @@ class SphereObject : public GeometryObject {
 		}
 
 	private:
-
-		Vector3D<float> normal;
 
 		static constexpr const char name[] = "Sphere";
 };
@@ -439,9 +427,11 @@ class PlaneObject : public GeometryObject {
 		float getWidth() { return width; }
 		float getHeight() { return height; }
 
-		virtual void computeNormal() override;
+		virtual void computeOrientation() override;
 
-		virtual Vector3D<float> getNormal() override
+		virtual Vector3D<float> computeNormal(const HitRecord& hit) override { return normal; }
+
+		Vector3D<float> getNormal()
 		{
 			return normal;
 		}
@@ -480,7 +470,7 @@ class PlaneObject : public GeometryObject {
 			boundingBox.computeCentroid();
 		}
 
-		virtual bool rayIntersection(Ray& ray, float tMin, float tMax) override
+		virtual bool rayIntersection(Ray& ray, float tMin, float tMax, HitRecord& hit) override
 		{
 			if (ray.direction * normal == 0.0f) { return false; }
 
@@ -498,10 +488,10 @@ class PlaneObject : public GeometryObject {
 				//if (hitPoint > min && hitPoint < max)
 				if (fabs(lx) <= width * 0.5f && fabs(lz) <= height * 0.5f)
 				{
-					hitRecord.front = true;
-					hitRecord.back = false;
-					hitRecord.hitPoint = hitPoint;
-					hitRecord.t = t;
+					hit.front = true;
+					hit.back = false;
+					hit.hitPoint = hitPoint;
+					hit.t = t;
 
 					return true;
 				}
