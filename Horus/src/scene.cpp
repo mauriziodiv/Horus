@@ -1,4 +1,6 @@
 #include "scene.h"
+#include <thread>
+#include <atomic>
 
 bool parseFloat(std::string_view token, float& v)
 {
@@ -247,6 +249,7 @@ void Scene::render()
 	output.setFilePathWrite(getFilePathWrite());
 	output.setWidth(getWidth());
 	output.setHeight(getHeight());
+	output.allocateBuffer();
 
 	camera->setFocalLength(focal_length);
 	camera->setWindow(getWidth(), getHeight());
@@ -258,45 +261,42 @@ void Scene::render()
 	float width = camera->getWidth();
 	float height = camera->getHeight();
 
-	Integrator integrator(lights);
-	integrator.addAreaLights(areaLights);
-	integrator.addMeshLights(meshLights);
-
 	BVH bvh;
 	bvh.buildBVH(geometries);
 
-	for (int i = height - 1; i >= 0; --i)
-	{
-		for (int j = 0; j < width; ++j)
+	//for (int i = height - 1; i >= 0; --i)
+	auto renderRow = [&](int i, Integrator& integrator)
 		{
-			integrator.seed(static_cast<uint32_t>(i * (int)width + j));
-
-			float u = (float)j / (width - 1);
-			float v = (float)i / (height - 1);
-
-			Vector3D<float> color(0.0f, 0.0f, 0.0f);
-
-			Ray ray(camera->genRay(u, v));
-
-			Ray originalRay = ray;
-
-			for (size_t k = 0; k < numberOfSamples; ++k)
+			for (int j = 0; j < width; ++j)
 			{
-				float x = (originalRay.getDirection().x + (integrator.getUnitRandom().Generate() - 0.5f) / width);
-				float y = (originalRay.getDirection().y + (integrator.getUnitRandom().Generate() - 0.5f) / height);
-				float z = (originalRay.getDirection().z + (integrator.getUnitRandom().Generate() - 0.5f) / width);
+				integrator.seed(static_cast<uint32_t>(i * (int)width + j));
 
-				ray.setDirection(Vector3D<float>(x, y, z));
+				float u = (float)j / (width - 1);
+				float v = (float)i / (height - 1);
 
-				color += integrator.rayPath(ray, bvh, bounces);
-			}
+				Vector3D<float> color(0.0f, 0.0f, 0.0f);
 
-			color /= (float)numberOfSamples;
+				Ray ray(camera->genRay(u, v));
 
-			if (gammaCorrectionSet)
-			{
-				switch (gammaCorrection)
+				Ray originalRay = ray;
+
+				for (size_t k = 0; k < numberOfSamples; ++k)
 				{
+					float x = (originalRay.getDirection().x + (integrator.getUnitRandom().Generate() - 0.5f) / width);
+					float y = (originalRay.getDirection().y + (integrator.getUnitRandom().Generate() - 0.5f) / height);
+					float z = (originalRay.getDirection().z + (integrator.getUnitRandom().Generate() - 0.5f) / width);
+
+					ray.setDirection(Vector3D<float>(x, y, z));
+
+					color += integrator.rayPath(ray, bvh, bounces);
+				}
+
+				color /= (float)numberOfSamples;
+
+				if (gammaCorrectionSet)
+				{
+					switch (gammaCorrection)
+					{
 					case GammaCorrection::GAMMA2:
 						color.x = std::sqrt(color.x);
 						color.y = std::sqrt(color.y);
@@ -305,11 +305,49 @@ void Scene::render()
 
 					default:
 						break;
+					}
 				}
-			}
 
-			output.writeBuffer(color);
-		}
+				output.writeBuffer(static_cast<size_t>((height - 1 - i) * width + j), color);
+			}
+		};
+
+	//Integrator integrator(lights);
+	//integrator.addAreaLights(areaLights);
+	//integrator.addMeshLights(meshLights);
+
+	unsigned int threadCount = std::thread::hardware_concurrency();
+
+	if (threadCount == 0)
+	{
+		threadCount = 4;
 	}
+
+	std::atomic<int> nextRow{ 0 };
+
+	std::vector<std::thread> threads;
+
+	for (unsigned int t = 0; t < threadCount; ++t)
+	{
+		threads.emplace_back([&]()
+			{
+				Integrator integrator(lights);
+				integrator.addAreaLights(areaLights);
+				integrator.addMeshLights(meshLights);
+
+				int i;
+
+				while ((i = nextRow++) < (int)height)
+				{
+					renderRow(i, integrator);
+				}
+			});
+	}
+
+	for (std::thread& t : threads)
+	{
+		t.join();
+	}
+
 	output.write();
 }

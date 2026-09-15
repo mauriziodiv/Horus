@@ -26,7 +26,8 @@ class Output
 		float getWidth() { return width; }
 		float getHeight() { return height; }
 
-		void writeBuffer(Vector3D<float> value) { buffer.push_back(value); };
+		void allocateBuffer() { buffer.assign((size_t)width * (size_t)height, Vector3D<float>(0.0f, 0.0f, 0.0f)); };
+		void writeBuffer(size_t index, Vector3D<float> value) { buffer[index] = value; };
 
 		void write();
 
