@@ -304,7 +304,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary)
 {
 
 	HitRecord hit;
@@ -644,7 +644,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			//background color
 			for (LightObject* light : lights)
 			{
-				if (light->getLightType() == LightType::DOME)
+				if (light->getLightType() == LightType::DOME && (light->getVisibility() || !isPrimary))
 				{
 					color += light->getRadiance(ray.getDirection());
 				}

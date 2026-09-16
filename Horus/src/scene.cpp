@@ -288,7 +288,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces);
+					color += integrator.rayPath(ray, bvh, bounces, true, true);
 				}
 
 				color /= (float)numberOfSamples;

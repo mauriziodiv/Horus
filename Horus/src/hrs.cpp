@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include "mesh.h"
+#include <thread>
+#include <atomic>
 
 std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"pos", ParameterType::POSITION},
@@ -19,7 +21,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"window", ParameterType::WINDOW},
 	{"shader", ParameterType::SHADER},
 	{"geo", ParameterType::GEO},
-	{"exposure", ParameterType::EXPOSURE}
+	{"exposure", ParameterType::EXPOSURE},
+	{"visibility", ParameterType::VISIBILITY}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -289,7 +292,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 								tokenSearch(file, '"', texturePath);
 
-								if (lightObject &&!texturePath.empty() && lightObject->loadTexture(texturePath))
+								if (lightObject && !texturePath.empty() && lightObject->loadTexture(texturePath))
 								{
 									lightObject->setColor(Vector3D<float>(1.0f, 1.0f, 1.0f));
 								}
@@ -339,6 +342,31 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							}
 						}
 						break;
+
+				case ParameterType::VISIBILITY:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						SceneObject* sceneObject = dynamic_cast<SceneObject*>(sceneObjects.back().get());
+
+						if (sceneObject && sceneObject->getType() == SceneObjectType::LIGHT)
+						{
+							LightObject* lightObject = dynamic_cast<LightObject*>(sceneObject);
+
+							if (lightObject)
+							{
+								int visibility = std::stoi(token);
+
+								if (visibility == 1 || visibility == 0)
+								{
+									lightObject->setVisibility(visibility);
+								}
+							}
+						}
+					}
+					break;
 
 				case ParameterType::LAT:
 
@@ -1065,39 +1093,106 @@ DomeSample DomeLightObject::sampleDomeLight(float r1, float r2)
 	return sample;
 }
 
+//void DomeLightObject::analyzeTexture()
+//{
+//	luminanceSum.resize(static_cast<size_t>(texture.getWidth()) * static_cast<size_t>(texture.getHeight()));
+//
+//	size_t position = 0;
+//	double acc = 0.0;
+//	double accTotal = 0.0;
+//	float sintetha = 0.0f;
+//
+//	rowSum.clear();
+//
+//	analysisValid = false;
+//
+//	for (size_t j = 0; j < texture.getHeight(); j++)
+//	{
+//		acc = 0.0f;
+//		sintetha = std::sin(PI * (j + 0.5) / texture.getHeight());
+//
+//		for (size_t i = 0; i < texture.getWidth(); i++)
+//		{
+//			position = j * texture.getWidth() + i;
+//
+//			acc +=  texture.getLuminance(i, j) * sintetha;
+//
+//			luminanceSum[position] = acc;
+//		}
+//
+//		accTotal += acc;
+//		rowSum.push_back(accTotal);
+//
+//		if (!rowSum.empty() && rowSum.back() > 0.0f)
+//		{
+//			analysisValid = true;
+//		}
+//	}
+//}
+
 void DomeLightObject::analyzeTexture()
 {
-	luminanceSum.resize(static_cast<size_t>(texture.getWidth()) * static_cast<size_t>(texture.getHeight()));
+	const size_t width = static_cast<size_t>(texture.getWidth());
+	const size_t height = static_cast<size_t>(texture.getHeight());
 
-	size_t position = 0;
-	double acc = 0.0;
-	double accTotal = 0.0;
-	float sintetha = 0.0f;
+	luminanceSum.resize(width * height);
+
+	std::vector<double> rowTotal(height, 0.0);
 
 	rowSum.clear();
 
 	analysisValid = false;
 
-	for (size_t j = 0; j < texture.getHeight(); j++)
+	unsigned int threadCount = std::thread::hardware_concurrency();
+
+	if (threadCount == 0)
 	{
-		acc = 0.0f;
-		sintetha = std::sin(PI * (j + 0.5) / texture.getHeight());
-
-		for (size_t i = 0; i < texture.getWidth(); i++)
-		{
-			position = j * texture.getWidth() + i;
-
-			acc +=  texture.getLuminance(i, j) * sintetha;
-
-			luminanceSum[position] = acc;
-		}
-
-		accTotal += acc;
-		rowSum.push_back(accTotal);
-
-		if (!rowSum.empty() && rowSum.back() > 0.0f)
-		{
-			analysisValid = true;
-		}
+		threadCount = 4;
 	}
+
+	std::atomic<size_t> nextRow{ 0 };
+
+	std::vector<std::thread> threads;
+
+	for (unsigned int t = 0; t < threadCount; ++t)
+	{
+		threads.emplace_back([&]()
+			{
+				size_t j;
+
+				while ((j = nextRow++) < height)
+				{
+					double acc = 0.0;
+					float sintetha = std::sin(PI * (j + 0.5) / height);
+					size_t rowStart = j * width;
+
+					for (size_t i = 0; i < width; i++)
+					{
+						acc += texture.getLuminance(static_cast<int>(i), static_cast<int>(j)) * sintetha;
+
+						luminanceSum[rowStart + i] = static_cast<float>(acc);
+					}
+
+					rowTotal[j] = acc;
+				}
+			});
+	}
+
+	for (std::thread& thread : threads)
+	{
+		thread.join();
+	}
+
+	double accTotal = 0.0;
+
+	rowSum.reserve(height);
+
+	for (size_t j = 0; j < height; j++)
+	{
+		accTotal += rowTotal[j];
+
+		rowSum.push_back(static_cast<float>(accTotal));
+	}
+
+	analysisValid = (!rowSum.empty() && rowSum.back() > 0.0f);
 }

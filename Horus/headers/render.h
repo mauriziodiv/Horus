@@ -12,7 +12,7 @@ class Integrator
 		Integrator(std::vector<LightObject*>& lights) : lights(lights) { };
 		void addAreaLights(std::vector<AreaLight*>& al);
 		void addMeshLights(std::vector<MeshLight*>& ml);
-		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true);
+		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true, bool isPrimaty = false);
 
 		std::vector<LightObject*>& getLights() { return lights; }
 		std::vector<AreaLight*>& getAreaLights() { return areaLights; }

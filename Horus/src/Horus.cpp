@@ -4,6 +4,8 @@
 #include "hrs.h"
 #include "scene.h"
 #include <iostream>
+#include <thread>
+#include <imfThreading.h>
 //#include <ImfHeader.h>
 //#include <OpenEXRConfig.h>
 
@@ -42,6 +44,12 @@ int main(int argc, char* argv[])
 	// Main program
 	 
 	std::cout << "Horus" << std::endl;
+
+	unsigned int exrThreads = std::thread::hardware_concurrency();
+
+	if (exrThreads == 0) { exrThreads = 4; }
+
+	Imf::setGlobalThreadCount(static_cast<int>(exrThreads));
 
 	std::vector<std::string> inputDescription;
 

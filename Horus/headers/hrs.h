@@ -178,7 +178,8 @@ enum class ParameterType {
 	WINDOW,
 	SHADER,
 	GEO,
-	EXPOSURE
+	EXPOSURE,
+	VISIBILITY
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -211,7 +212,7 @@ class SceneObject {
 
 	public:
 
-		SceneObject(SceneObjectType t) : type(t), position(0.0f, 0.0f, 0.0f), RIGHT(1.0f, 0.0f, 0.0f), UP(0.0f, 1.0f, 0.0f), FORWARD(0.0f, 0.0f, -1.0f) {}
+		SceneObject(SceneObjectType t) : type(t), position(0.0f, 0.0f, 0.0f), RIGHT(1.0f, 0.0f, 0.0f), UP(0.0f, 1.0f, 0.0f), FORWARD(0.0f, 0.0f, -1.0f), visibility(true) {}
 
 		SceneObjectType getType()
 		{
@@ -227,6 +228,9 @@ class SceneObject {
 		
 		virtual std::string_view getObjectName() = 0;
 
+		virtual void setVisibility(bool vis) { visibility = vis; }
+		virtual bool getVisibility() { return visibility; }
+
 		Vector3D<float> position;
 		Vector3D<float> rotation;
 
@@ -236,6 +240,9 @@ class SceneObject {
 		Vector3D<float> RIGHT;
 		Vector3D<float> UP;
 		Vector3D<float> FORWARD;
+
+	protected:
+		bool visibility;
 };
 
 // GEOMETRY ###############################################
