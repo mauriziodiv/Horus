@@ -1093,43 +1093,6 @@ DomeSample DomeLightObject::sampleDomeLight(float r1, float r2)
 	return sample;
 }
 
-//void DomeLightObject::analyzeTexture()
-//{
-//	luminanceSum.resize(static_cast<size_t>(texture.getWidth()) * static_cast<size_t>(texture.getHeight()));
-//
-//	size_t position = 0;
-//	double acc = 0.0;
-//	double accTotal = 0.0;
-//	float sintetha = 0.0f;
-//
-//	rowSum.clear();
-//
-//	analysisValid = false;
-//
-//	for (size_t j = 0; j < texture.getHeight(); j++)
-//	{
-//		acc = 0.0f;
-//		sintetha = std::sin(PI * (j + 0.5) / texture.getHeight());
-//
-//		for (size_t i = 0; i < texture.getWidth(); i++)
-//		{
-//			position = j * texture.getWidth() + i;
-//
-//			acc +=  texture.getLuminance(i, j) * sintetha;
-//
-//			luminanceSum[position] = acc;
-//		}
-//
-//		accTotal += acc;
-//		rowSum.push_back(accTotal);
-//
-//		if (!rowSum.empty() && rowSum.back() > 0.0f)
-//		{
-//			analysisValid = true;
-//		}
-//	}
-//}
-
 void DomeLightObject::analyzeTexture()
 {
 	const size_t width = static_cast<size_t>(texture.getWidth());

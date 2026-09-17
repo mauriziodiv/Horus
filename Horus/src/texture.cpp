@@ -33,17 +33,20 @@ bool Texture::load(const std::string& filePath)
 			return false;
 		}
 
-		pixels.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
+		//pixels.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
+		std::vector<Vector3D<float>> data(static_cast<size_t>(width) * static_cast<size_t>(height));
 
 		for (int i = 0; i < height; i++)
 		{
 			for (int j = 0; j < width; j++)
 			{
 				const Imf::Rgba& p = halfPixel[i][j];
-				pixels[(i * width) + j] = Vector3D<float>(p.r, p.g, p.b);
+				data[(i * width) + j] = Vector3D<float>(p.r, p.g, p.b);
 			}
 		}
 		
+		pixels = std::make_shared<const std::vector<Vector3D<float>>>(std::move(data));
+
 		loaded = true;
 
 		return true;
@@ -76,7 +79,7 @@ Vector3D<float> Texture::sample(Point<float> uv)
 	if (y < 0) { y = 0; };
 	if (y > height - 1) { y = height - 1; };
 
-	return pixels[(y * width) + x];
+	return (*pixels)[(y * width) + x];
 }
 
 bool TextureSet::loadTile(int tile, const std::string& filePath)

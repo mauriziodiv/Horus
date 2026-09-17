@@ -68,7 +68,7 @@ class Triangle : public GeometryObject
 
 	private:
 		float epsilon = 0.001f;
-		float uvEpsilon = 0.0001f;
+		float uvEpsilon = 1e-10f;
 		
 		Vector3D<float> tangent;
 		Vector3D<float> bitangent;

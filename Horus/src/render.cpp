@@ -612,6 +612,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			if (refraction_gain < 1.0f)
 			{
 				Vector3D<float> newDir;
+				Vector3D<float> tint;
 				bool passEmission;
 
 				if (isBelowRoughness)
@@ -620,6 +621,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					Vector3D<float> surfaceNormal = normal;
 
 					newDir = toWorld(rndDir, surfaceNormal);
+					tint = diffuseColor;
 					passEmission = false;
 
 					//Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
@@ -628,12 +630,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				else
 				{
 					newDir = reflectedDir;
+					tint = Vector3D<float>(1.0f, 1.0f, 1.0f);
 					passEmission = true;
 				}
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
-				color += (diffuseColor % rayPath(newRay, bvh, nBounces - 1, passEmission)) * diffuseGain * (1.0f - refraction_gain);
+				color += (tint % rayPath(newRay, bvh, nBounces - 1, passEmission)) * diffuseGain * (1.0f - refraction_gain);
 			}
 		}
 	}
