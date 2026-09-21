@@ -38,6 +38,11 @@ bool Surface::setRoughnessTex(const std::string& filePath)
 	return roughnessTex.load(filePath);
 }
 
+bool Surface::setSpecularTex(const std::string& filePath)
+{
+	return specularTex.load(filePath);
+}
+
 bool Surface::setSubsurfaceGainTex(const std::string& filePath)
 {
 	return subsurfaceGainTex.load(filePath);

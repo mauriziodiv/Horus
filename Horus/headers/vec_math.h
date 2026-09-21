@@ -456,3 +456,9 @@ inline Vector3D<float> uvToVector(const Point<float>& uv)
 
 	return Vector3D<float>(x, y, z);
 }
+
+inline float Schlick(float ior, float cosTetha)
+{
+	float F_0 = ((1.0f - ior) / (1.0f + ior)) * ((1.0f - ior) / (1.0f + ior));
+	return F_0 + (1.0f - F_0) * pow(1.0f - cosTetha, 5.0f);
+}

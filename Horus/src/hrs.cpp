@@ -17,6 +17,7 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"diffuse_gain", ParameterType::DIFFUSE_GAIN},
 	{"diffuse_color", ParameterType::DIFFUSE_COLOR},
 	{"roughness", ParameterType::ROUGHNESS},
+	{"specular", ParameterType::SPECULAR},
 	{"lat", ParameterType::LAT},
 	{"window", ParameterType::WINDOW},
 	{"shader", ParameterType::SHADER},
@@ -36,6 +37,7 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"diffuse_gain", ShaderParameterType::DIFFUSE_GAIN},
 	{"diffuse_color", ShaderParameterType::DIFFUSE_COLOR},
 	{"roughness", ShaderParameterType::ROUGHNESS},
+	{"specular", ShaderParameterType::SPECULAR},
 	{"refraction_gain", ShaderParameterType::REFRACTION_GAIN},
 	{"ior", ShaderParameterType::IOR},
 	{"subsurface_gain", ShaderParameterType::SUBSURFACE_GAIN},
@@ -784,6 +786,39 @@ bool GeometryObject::parse()
 														{
 															std::cout << "Shader: could not load texture!" << std::endl;
 															p->setRoughness(1.0f);
+														}
+													}
+												}
+											}
+										}
+
+										break;
+
+									case ShaderParameterType::SPECULAR:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												if (token != "T")
+												{
+													p->setSpecular(std::stof(token));
+												}
+												else if (token == "T")
+												{
+													// open the file and read the texture.
+													textureFilePathToken.clear();
+													tokenSearch(shaderFile, '"', textureFilePathToken);
+
+													if (!textureFilePathToken.empty())
+													{
+														if (!p->setSpecularTex(textureFilePathToken))
+														{
+															std::cout << "Shader: could not load texture!" << std::endl;
+															p->setSpecular(1.0f);
 														}
 													}
 												}

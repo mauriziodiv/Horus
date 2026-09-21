@@ -73,7 +73,7 @@ public:
 class Surface : public BxDF
 {
 	public:
-		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f), normalMapGain(1.0f) {}
+		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f), normalMapGain(1.0f), specularWeight(1.0f) {}
 
 		void setDiffuseGain(float g)
 		{
@@ -103,6 +103,11 @@ class Surface : public BxDF
 		void setRoughness(float r)
 		{
 			roughness = r;
+		}
+
+		void setSpecular(float w)
+		{
+			specularWeight = w;
 		}
 
 		void setRefractionGain(float g)
@@ -143,6 +148,16 @@ class Surface : public BxDF
 			}
 
 			return roughness;
+		}
+
+		float getSpecular(const Point<float>& uv)
+		{
+			if (specularTex.isLoaded())
+			{	
+				return specularTex.sample(uv).x;
+			}
+
+			return specularWeight;
 		}
 
 		float getRefractionGain()
@@ -224,6 +239,7 @@ class Surface : public BxDF
 
 		bool setDiffuseColorTex(const std::string& filePath);
 		bool setRoughnessTex(const std::string& filePath);
+		bool setSpecularTex(const std::string& filePath);
 		bool setSubsurfaceGainTex(const std::string& filePath);
 		bool setNormalMapTex(const std::string& filePath);
 
@@ -235,12 +251,14 @@ class Surface : public BxDF
 		float IOR;
 		float subsurfaceGain;
 		float normalMapGain;
+		float specularWeight;
 		
 		Vector3D<float> subsurfaceColor;
 		Vector3D<float> subsurfaceRadius;
 
 		TextureSet diffuseColorTex;
 		TextureSet roughnessTex;
+		TextureSet specularTex;
 		TextureSet subsurfaceGainTex;
 		TextureSet normalMapTex;
 		

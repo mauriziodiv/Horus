@@ -344,6 +344,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			float diffuseGain = 1.0f;
 			Vector3D<float> diffuseColor(1.0f, 1.0f, 1.0f);
 			float roughness = 1.0f;
+			float specular = 1.0f;
 
 			float refraction_gain = 0.0f;
 			float IOR = 1.0f;
@@ -390,6 +391,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				
 				diffuseColor = surface->getDiffuseColor(uv);
 				roughness = surface->getRoughness(uv);
+				specular = surface->getSpecular(uv);
 
 				refraction_gain = surface->getRefractionGain();
 				IOR = surface->getIOR();
@@ -401,10 +403,26 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				medium = surface->getMedium();
 			}
 
-			bool isBelowRoughness = unitRandom.Generate() < roughness;
+			Vector3D<float> viewDir = ray.getDirection();
+			viewDir.normalize();
+
+			float cosTheta = std::abs(viewDir * normal);
+
+			//float F_0 = ((1.0f - IOR) / (1.0f + IOR)) * ((1.0f - IOR) / (1.0f + IOR));
+			//float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f);
+			float F = Schlick(IOR, cosTheta);
+
+			if (std::abs(IOR - 1.0f) < 1e-4f)
+			{
+				F = 0.0f;
+			}
+
+			bool isDiffuseBranch = unitRandom.Generate() >= (F * specular);
+
+			//bool isBelowRoughness = unitRandom.Generate() < roughness;
 			// Area and meshLight light sampling
 			// if (!areaLights.empty() || !meshLights.empty())
-			if (isBelowRoughness && (!areaLights.empty() || !meshLights.empty()))
+			if (isDiffuseBranch && (!areaLights.empty() || !meshLights.empty()))
 			{
 				//float rnd = unitRandom.Generate() * areaLights.size();
 				AreaLight* areaLight = nullptr;
@@ -486,7 +504,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			// Dome light sampling
 			for (LightObject* light : lights)
 			{
-				if (!isBelowRoughness) { continue; }
+				if (!isDiffuseBranch) { continue; }
 
 				if (light->getLightType() != LightType::DOME) { continue; }
 
@@ -563,9 +581,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				// Step 1: Check for total internal reflection
 				float cos_i = - (dir * normal);
 				
-				float k = 1.0f - ratio * ratio * (1.0f - cos_i * cos_i); //	k = 1 − η² ·(1 − cos_i²)
+				float k = 1.0f - ratio * ratio * (1.0f - cos_i * cos_i);
 
-				if (k < 0.0f)//	if k < 0
+				if (k < 0.0f)
 				{
 					// reflect()
 					reflect(hitPoint, normal, reflectedDir, bvh, nBounces, refraction_gain, color);
@@ -575,8 +593,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					// Step 2: Fresnel via Schlick
 					float cos_schlick = (ratio > 1.0f) ? std::sqrt(k) : cos_i;
 
-					float F_0 = ((1.0f - IOR) / (1.0f + IOR)) * ((1.0f - IOR) / (1.0f + IOR)); // F₀ = ((n₁ − n₂) / (n₁ + n₂))²
-					float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f); // F = F₀ + (1 − F₀)(1 − cos_i)⁵
+					//float F_0 = ((1.0f - IOR) / (1.0f + IOR)) * ((1.0f - IOR) / (1.0f + IOR));
+					//float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f);
+					float F = Schlick(IOR, cos_schlick);
 
 					if (std::abs(IOR - 1.0f) < 1e-4f)
 					{
@@ -615,7 +634,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				Vector3D<float> tint;
 				bool passEmission;
 
-				if (isBelowRoughness)
+				if (isDiffuseBranch)
 				{
 					Vector3D<float> rndDir = Sampler::cosineWeightSampleHemisphere(r1, r2);
 					Vector3D<float> surfaceNormal = normal;
