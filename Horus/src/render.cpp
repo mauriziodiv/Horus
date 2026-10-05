@@ -492,7 +492,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 							//Vector3D<float> rawLight = areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
 							//float pdfArea = 1.0f / (areaLight->getWidth() * areaLight->getHeight());
 
-							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / pdfArea;
+							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI);
 							lightsContribution = rddap * lightObjectsCount;
 
 							color += lightsContribution;
