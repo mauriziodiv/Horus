@@ -20,6 +20,8 @@ class Integrator
 		void seed(uint32_t s) { unitRandom.seed(s); }
 		UnitRandom& getUnitRandom() { return unitRandom; }
 
+		Vector3D<float> toLocal(Vector3D<float> vec, Vector3D<float> refVector);
+
 	private:
 
 		std::vector<LightObject*> lights;

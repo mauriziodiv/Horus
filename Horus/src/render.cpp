@@ -551,6 +551,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			reflected.reflect(normal);
 			Vector3D<float> reflectedDir = reflected.getDirection();
 
+			Vector3D<float> shadingNormal = normal;
+
 			float r1 = unitRandom.Generate();
 			float r2 = unitRandom.Generate();
 
@@ -642,15 +644,41 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					newDir = toWorld(rndDir, surfaceNormal);
 					tint = diffuseColor;
 					passEmission = false;
-
-					//Vector3D<float> diffuseScatter = toWorld(rndDir, surfaceNormal);
-					//Vector3D<float> finalScatter = (reflectedDir * (1.0f - roughness)) + (diffuseScatter * roughness);
 				}
 				else
 				{
-					newDir = reflectedDir;
-					tint = Vector3D<float>(1.0f, 1.0f, 1.0f);
+					//newDir = reflectedDir;
+					//tint = Vector3D<float>(1.0f, 1.0f, 1.0f);
+					//passEmission = true;
+
+					float alpha = roughness * roughness;
+
+					Vector3D<float> wo = -viewDir;
+					Vector3D<float> woLocal = toLocal(wo, shadingNormal);
+
 					passEmission = true;
+
+					if (woLocal.z <= 1e-6f)
+					{
+						newDir = reflectedDir;
+						tint = Vector3D<float>(1.0f, 1.0f, 1.0f);
+					}
+					else
+					{
+						Vector3D<float> wh = Sampler::GGXVNDF(woLocal, alpha, r1, r2);
+						Vector3D<float> wiLocal = (wh * 2.0f * (woLocal * wh)) - woLocal;
+
+						if (wiLocal.z <= 0.0f)
+						{
+							newDir = reflectedDir;
+							tint = Vector3D<float>(0.0f, 0.0f, 0.0f);
+						}
+						else
+						{
+							newDir = toWorld(wiLocal, shadingNormal);
+							tint = Vector3D<float>(1.0f, 1.0f, 1.0f) * SmithG2OverG1(woLocal.z, wiLocal.z, alpha);
+						}
+					}
 				}
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
@@ -675,4 +703,22 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 	}
 
 	return color;
+}
+
+Vector3D<float> Integrator::toLocal(Vector3D<float> vec, Vector3D<float> refVector)
+{
+	Vector3D<float> refAxis(0.0f, 1.0f, 0.0f);
+
+	if (fabs(refVector.y) > 0.999f)
+	{
+		refAxis = Vector3D<float>(1.0f, 0.0f, 0.0f);
+	}
+
+	Vector3D<float> T = refVector | refAxis;
+	T.normalize();
+
+	Vector3D<float> B = T | refVector;
+	B.normalize();
+
+	return Vector3D<float>(vec * T, vec * B, vec * refVector);
 }

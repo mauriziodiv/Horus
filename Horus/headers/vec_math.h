@@ -462,3 +462,25 @@ inline float Schlick(float ior, float cosTetha)
 	float F_0 = ((1.0f - ior) / (1.0f + ior)) * ((1.0f - ior) / (1.0f + ior));
 	return F_0 + (1.0f - F_0) * pow(1.0f - cosTetha, 5.0f);
 }
+
+inline float SmithLambda(float cosTetha, float alpha)
+{
+	float c = std::max(std::abs(cosTetha), 1e-6f);
+	float c2 = c * c;
+	float a2 = alpha * alpha;
+
+	return 0.5f * ((std::sqrt(c2 + (a2 * (1.0f - c2))) / c) - 1.0f);
+}
+
+inline float SmithG2OverG1(float cosTethaO, float cosTethaI, float alpha)
+{
+	if (alpha < 1e-3f)
+	{
+		return 1.0f;
+	}
+
+	float lambdaO = SmithLambda(cosTethaO, alpha);
+	float lambdaI = SmithLambda(cosTethaI, alpha);
+
+	return (1.0f + lambdaO) / (1.0f + lambdaO + lambdaI);
+}
