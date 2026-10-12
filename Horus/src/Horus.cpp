@@ -70,43 +70,40 @@ int main(int argc, char* argv[])
 
 	Scene scene;
 
-	// Set render output type
-	if (!scene.setRenderOutput(inputDescription[1])) { return 1; }
-
-	// Set the destination of the render
-	if (!scene.setFilePathWrite(inputDescription[2])) { return 1; }
+	// Set the destination of the render; its extension sets the render output type
+	if (!scene.setFilePathWrite(inputDescription[1])) { return 1; }
 
 	// Set gamma correction option if provided
-	if (inputDescription.size() > 3 && !inputDescription[3].empty())
+	if (inputDescription.size() > 2 && !inputDescription[2].empty())
 	{
-		if (!scene.setGammaCorrection(inputDescription[3]))
+		if (!scene.setGammaCorrection(inputDescription[2]))
 		{
 			std::cout << "Invalid Gamma Correction option!" << std::endl;
 		}
 	}
 
 	//Set the Window
-	if (inputDescription.size() > 4 && !inputDescription[4].empty())
+	if (inputDescription.size() > 3 && !inputDescription[3].empty())
 	{
-		if (!scene.setWindow(inputDescription[4]))
+		if (!scene.setWindow(inputDescription[3]))
 		{
 			std::cout << "Invalid Window!" << std::endl;
 		}
 	}
 
 	//Set the number of samples
-	if (inputDescription.size() > 5 && !inputDescription[5].empty())
+	if (inputDescription.size() > 4 && !inputDescription[4].empty())
 	{
-		if (!scene.setSamples(inputDescription[5]))
+		if (!scene.setSamples(inputDescription[4]))
 		{
 			std::cout << "Invalid Number of Samples!" << std::endl;
 		}
 	}
 
 	//Set the number of bounces
-	if (inputDescription.size() > 6 && !inputDescription[6].empty())
+	if (inputDescription.size() > 5 && !inputDescription[5].empty())
 	{
-		if (!scene.setBounces(inputDescription[6]))
+		if (!scene.setBounces(inputDescription[5]))
 		{
 			std::cout << "Invalid Number of Bounces!" << std::endl;
 		}

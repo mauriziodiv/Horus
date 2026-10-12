@@ -17,20 +17,19 @@ Toolset v145 (bumped from v143 in `30779a7`). Headers are under `Horus/headers/`
 ## Running
 
 ```
-Horus.exe <scene_file> ppm <output.ppm> [gamma2] [window] [samples] [bounces]
+Horus.exe <scene_file> <output.ppm|output.exr> [gamma2] [window] [samples] [bounces]
 ```
 
 - `<scene_file>` — path to a scene description file (custom text format, see below); can live anywhere on disk, passed through as-is
-- `ppm` — only supported output format; lowercase, case-sensitive
-- `<output.ppm>` — output file path
-- `[gamma2]` — applies sqrt-based gamma correction (gamma = 2); lowercase, case-sensitive
+- `<output>` — output file path; its extension (`.ppm` or `.exr`, lowercase) chooses the format. There is no separate format argument
+- `[gamma2]` — applies sqrt-based gamma correction (gamma = 2); lowercase, case-sensitive; ignored for `.exr`, which is written linear
 - `[window]` — render resolution as `width,height` (e.g. `1920,1080`); overrides the camera `window` in the scene file, which is dead
 - `[samples]` — samples per pixel; must be >= 1
 - `[bounces]` — maximum ray depth
 
 Arguments are strictly positional: to set a later one, every earlier one must be present. Pass an empty string `""` to skip an optional argument you don't want to set.
 
-Every argument except the scene file accepts an optional leading `-` (e.g. `-ppm`, `-C:\path\to\output.ppm`, `-gamma2`, `-1920,1080`) which is stripped before parsing.
+Every argument except the scene file accepts an optional leading `-` (e.g. `-C:\path\to\output.ppm`, `-gamma2`, `-1920,1080`) which is stripped before parsing.
 
 ## Validation
 

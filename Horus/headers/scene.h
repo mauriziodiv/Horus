@@ -19,7 +19,6 @@ class Scene {
 		CameraObject* getCamera() { return camera; }
 		std::vector<GeometryObject*> getGeometries() { return geometries; }
 		std::vector<LightObject*> getLights() { return lights; }
-		bool setRenderOutput(const std::string_view& ro);
 		bool setGammaCorrection(const std::string_view gc);
 		bool setWindow(const std::string_view wSize);
 		bool setSamples(const std::string_view s);

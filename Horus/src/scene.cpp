@@ -136,22 +136,6 @@ bool Scene::lightCheck()
 	return true;
 }
 
-// Sets the render output format based on the provided string key.
-bool Scene::setRenderOutput(const std::string_view& ro)
-{
-	std::string_view par = (ro.front() == '-') ? ro.substr(1) : ro;
-
-	if (renderOutputMap.find(par) == renderOutputMap.end())
-	{
-		std::cout << "Invalid render output format!" << std::endl;
-		return false;
-	}
-
-	renderOutput = renderOutputMap[par];
-
-	return true;
-}
-
 bool Scene::setGammaCorrection(const std::string_view gc)
 {
 	std::string_view par = (gc.front() == '-') ? gc.substr(1) : gc;
@@ -244,7 +228,9 @@ bool Scene::setFilePathWrite(const std::string_view& path)
 		return false;
 	}
 
-	if (extension == "exr")
+	renderOutput = it->second;
+
+	if (renderOutput == RenderOutput::EXR)
 	{
 		gammaCorrectionEnabled = false;
 	}
