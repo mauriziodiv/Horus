@@ -181,7 +181,8 @@ enum class ParameterType {
 	SHADER,
 	GEO,
 	EXPOSURE,
-	VISIBILITY
+	VISIBILITY,
+	FOCAL_LENGTH
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -687,7 +688,7 @@ class CameraObject : public SceneObject {
 
 		CameraObject(CameraType cType) : SceneObject(SceneObjectType::CAMERA), cameraType(cType), lookAt(Vector3D<float>(0.0f, 0.0f, 0.0f)), focal_length(1.0f), width(200.0f), height(100.0f)
 		{
-			
+			setFocalLength(35.0f);
 		}
 
 		CameraType getCameraType()

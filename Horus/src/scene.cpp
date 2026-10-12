@@ -188,18 +188,6 @@ bool Scene::setWindow(const std::string_view wSize)
 	return true;
 }
 
-bool Scene::setFocalLength(const std::string_view fl)
-{
-	float f = 0.0;
-	std::string_view fl_token = (fl.front() == '-') ? fl.substr(1) : fl;
-
-	if (!parseFloat(fl_token, f)) { return false; };
-
-	focal_length = f;
-
-	return true;
-}
-
 bool Scene::setSamples(const std::string_view s)
 {
 	float samples = 0.0f;
@@ -251,7 +239,6 @@ void Scene::render()
 	output.setHeight(getHeight());
 	output.allocateBuffer();
 
-	camera->setFocalLength(focal_length);
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;

@@ -17,7 +17,7 @@ Toolset v145 (bumped from v143 in `30779a7`). Headers are under `Horus/headers/`
 ## Running
 
 ```
-Horus.exe <scene_file> ppm <output.ppm> [gamma2] [window] [focal_length] [samples] [bounces]
+Horus.exe <scene_file> ppm <output.ppm> [gamma2] [window] [samples] [bounces]
 ```
 
 - `<scene_file>` — path to a scene description file (custom text format, see below); can live anywhere on disk, passed through as-is
@@ -25,7 +25,6 @@ Horus.exe <scene_file> ppm <output.ppm> [gamma2] [window] [focal_length] [sample
 - `<output.ppm>` — output file path
 - `[gamma2]` — applies sqrt-based gamma correction (gamma = 2); lowercase, case-sensitive
 - `[window]` — render resolution as `width,height` (e.g. `1920,1080`); overrides the camera `window` in the scene file, which is dead
-- `[focal_length]` — camera focal length in mm (matches Maya's focalLength against a 24mm aperture)
 - `[samples]` — samples per pixel; must be >= 1
 - `[bounces]` — maximum ray depth
 
@@ -39,7 +38,9 @@ No test suite. Validate changes by building, running on a scene file, and inspec
 
 ## Scene File Format
 
-Custom token-based text format. Objects are terminated with `;`. Parameters use `-paramName-` as delimiters and `/value/` for values. Vector values are `/x,y,z/`. Example parameters: `pos`, `rot`, `size`, `radius`, `color`, `shader`, `diffuse_gain`, `diffuse_color`, `roughness`, `refraction_gain`, `ior`, `intensity`, `lat`, `width`, `height`, `window`.
+Custom token-based text format. Objects are terminated with `;`. Parameters use `-paramName-` as delimiters and `/value/` for values. Vector values are `/x,y,z/`. Example parameters: `pos`, `rot`, `size`, `radius`, `color`, `shader`, `diffuse_gain`, `diffuse_color`, `roughness`, `refraction_gain`, `ior`, `intensity`, `lat`, `width`, `height`, `window`, `focal_length`.
+
+The camera's `-focal_length- /mm/` lives in the `(perspective)` block (default 35; matches Maya's focalLength against a 24mm vertical aperture). It is no longer a command-line argument.
 
 Shader types: `constant`, `depth`, `surface`.
 

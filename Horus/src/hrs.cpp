@@ -23,7 +23,8 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"shader", ParameterType::SHADER},
 	{"geo", ParameterType::GEO},
 	{"exposure", ParameterType::EXPOSURE},
-	{"visibility", ParameterType::VISIBILITY}
+	{"visibility", ParameterType::VISIBILITY},
+	{"focal_length", ParameterType::FOCAL_LENGTH}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -410,6 +411,21 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							s >> width >> comma >> height;
 
 							cameraObject->setWindow(width, height);
+						}
+					}
+					break;
+
+				case ParameterType::FOCAL_LENGTH:
+
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						CameraObject* cameraObject = dynamic_cast<CameraObject*>(sceneObjects.back().get());
+
+						if (cameraObject)
+						{
+							cameraObject->setFocalLength(std::stof(token));
 						}
 					}
 					break;

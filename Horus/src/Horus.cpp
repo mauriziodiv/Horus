@@ -94,28 +94,19 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	//Set the Focal Length
+	//Set the number of samples
 	if (inputDescription.size() > 5 && !inputDescription[5].empty())
 	{
-		if (!scene.setFocalLength(inputDescription[5]))
-		{
-			std::cout << "Invalid Focal Length!" << std::endl;
-		}
-	}
-
-	//Set the number of samples
-	if (inputDescription.size() > 6 && !inputDescription[6].empty())
-	{
-		if (!scene.setSamples(inputDescription[6]))
+		if (!scene.setSamples(inputDescription[5]))
 		{
 			std::cout << "Invalid Number of Samples!" << std::endl;
 		}
 	}
 
 	//Set the number of bounces
-	if (inputDescription.size() > 7 && !inputDescription[7].empty())
+	if (inputDescription.size() > 6 && !inputDescription[6].empty())
 	{
-		if (!scene.setBounces(inputDescription[7]))
+		if (!scene.setBounces(inputDescription[6]))
 		{
 			std::cout << "Invalid Number of Bounces!" << std::endl;
 		}
