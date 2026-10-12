@@ -63,6 +63,7 @@ class MeshLight : public Mesh
 
 		void buildCDF();
 		LightSample sampleLight(float rndTriangle, float rU, float rV) const;
+		float getPdfArea() const { return 1.0f / totalArea; }
 
 	private:
 		float intensity;

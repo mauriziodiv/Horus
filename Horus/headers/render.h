@@ -12,7 +12,7 @@ class Integrator
 		Integrator(std::vector<LightObject*>& lights) : lights(lights) { };
 		void addAreaLights(std::vector<AreaLight*>& al);
 		void addMeshLights(std::vector<MeshLight*>& ml);
-		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true, bool isPrimaty = false);
+		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true, bool isPrimaty = false, float bsdfPdf = 0.0f);
 
 		std::vector<LightObject*>& getLights() { return lights; }
 		std::vector<AreaLight*>& getAreaLights() { return areaLights; }
@@ -35,4 +35,5 @@ class Integrator
 
 		Vector3D<float> subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& medium, float ior, int nBounces);
 		bool sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight, Vector3D<float>& lightPos, Vector3D<float>& lightNormal, Vector3D<float>& lightEmission, float& pdfArea, size_t& lightObjectCount);
+		float lightPdfSolidAngle(float pdfArea, float distance, float cosLight);
 };

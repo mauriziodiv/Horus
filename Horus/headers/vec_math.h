@@ -484,3 +484,44 @@ inline float SmithG2OverG1(float cosTethaO, float cosTethaI, float alpha)
 
 	return (1.0f + lambdaO) / (1.0f + lambdaO + lambdaI);
 }
+
+// GGX (Trowbridge-Reitz) normal distribution. cosThetaM = wm.z in the local frame.
+inline float GGXD(float cosThetaM, float alpha)
+{
+	if (cosThetaM <= 0.0f) { return 0.0f; }
+
+	float a2 = alpha * alpha;
+	float c2 = cosThetaM * cosThetaM;
+	float d = (c2 * (a2 - 1.0f)) + 1.0f;
+
+	return a2 / (PI * d * d);
+}
+
+// Smith masking for one direction
+inline float SmithG1(float cosTetha, float alpha)
+{
+	return 1.0f / (1.0f + SmithLambda(cosTetha, alpha));
+}
+
+// Height-correlated masking-shadowing for the pair (wo, wi)
+inline float SmithG2(float cosTethaO, float cosTethaI, float alpha)
+{
+	return 1.0f / (1.0f + SmithLambda(cosTethaO, alpha) + SmithLambda(cosTethaI, alpha));
+}
+
+// Solid-angle pdf of wi produced by GGXVNDF + mirror reflection: G1(wo) D(wm) / (4 wo.z)
+inline float GGXReflectionPdf(float cosTethaO, float cosThetaM, float alpha)
+{
+	return SmithG1(cosTethaO, alpha) * GGXD(cosThetaM, alpha) / (4.0f * cosTethaO);
+}
+
+// MIS power heuristic (beta = 2): weight of strategy A against strategy B
+inline float PowerHeuristic(float pdfA, float pdfB)
+{
+	float a2 = pdfA * pdfA;
+	float b2 = pdfB * pdfB;
+
+	if (a2 + b2 <= 0.0f) { return 0.0f; }
+
+	return a2 / (a2 + b2);
+}

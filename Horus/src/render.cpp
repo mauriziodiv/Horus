@@ -293,6 +293,17 @@ bool Integrator::sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight,
 	return true;
 }
 
+// Converts a light's area pdf into a solid-angle pdf seen from the shading point,
+// including the 1/N chance sampleLightSource() had of picking this light.
+float Integrator::lightPdfSolidAngle(float pdfArea, float distance, float cosLight)
+{
+	size_t lightCount = areaLights.size() + meshLights.size();
+
+	if (cosLight <= 0.0f || lightCount == 0) { return 0.0f; }
+
+	return (pdfArea * distance * distance) / (cosLight * static_cast<float>(lightCount));
+}
+
 void Integrator::addAreaLights(std::vector<AreaLight*>& al)
 {
 	areaLights = al;
@@ -304,7 +315,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf)
 {
 
 	HitRecord hit;
@@ -531,16 +542,37 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 			if (includeEmission)
 			{
+				// distance travelled by the ray that found this light (ray direction may not be unit length)
+				float lightDistance = (hitPoint - ray.getOrigin()).getLength();
+
 				if (AreaLight* al = dynamic_cast<AreaLight*>(closestHit))
 				{
-					//AreaLight* areaLight = dynamic_cast<AreaLight*>(closestHit);
-					color += al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure());
+					// MIS: if a GGX ray found this light, light sampling could have found it too
+					float misWeight = 1.0f;
+
+					if (bsdfPdf > 0.0f)
+					{
+						float cosLight = al->getNormal() * -viewDir;
+						float lightPdf = lightPdfSolidAngle(1.0f / (al->getWidth() * al->getHeight()), lightDistance, cosLight);
+						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
+					}
+
+					color += al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure()) * misWeight;
 				}
 
 				if (closestHit->getMeshLight() != nullptr)
 				{
 					MeshLight* ml = closestHit->getMeshLight();
-					color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure());
+					float misWeight = 1.0f;
+
+					if (bsdfPdf > 0.0f)
+					{
+						float cosLight = geometricNormal * -viewDir;
+						float lightPdf = lightPdfSolidAngle(ml->getPdfArea(), lightDistance, cosLight);
+						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
+					}
+
+					color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
 				}
 			}
 
@@ -635,6 +667,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				Vector3D<float> newDir;
 				Vector3D<float> tint;
 				bool passEmission;
+				float bsdfPdf = 0.0f;
+				Vector3D<float> specularDirect(0.0f, 0.0f, 0.0f);
 
 				if (isDiffuseBranch)
 				{
@@ -665,6 +699,55 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					}
 					else
 					{
+						// --- Light sampling for the specular lobe (MIS partner of the VNDF sample) ---
+						// Skipped for a near-mirror: a delta lobe can't be hit by a light sample.
+						if (alpha >= 1e-3f && (!areaLights.empty() || !meshLights.empty()))
+						{
+							AreaLight* areaLight = nullptr;
+							MeshLight* meshLight = nullptr;
+							size_t lightCount = 0;
+
+							Vector3D<float> lightPos(0.0f, 0.0f, 0.0f);
+							Vector3D<float> lightNormal(0.0f, 0.0f, 0.0f);
+							Vector3D<float> lightEmission(0.0f, 0.0f, 0.0f);
+							float pdfArea = 0.0f;
+
+							if (sampleLightSource(areaLight, meshLight, lightPos, lightNormal, lightEmission, pdfArea, lightCount))
+							{
+								Vector3D<float> toLight = lightPos - hitPoint;
+								float distance = toLight.getLength();
+								toLight.normalize();
+
+								Vector3D<float> wiLight = toLocal(toLight, shadingNormal);
+								float cosLight = lightNormal * -toLight;
+
+								Vector3D<float> halfSum = woLocal + wiLight;
+								float halfLen = halfSum.getLength();
+
+								if (wiLight.z > 0.0f && cosLight > 0.0f && halfLen > 1e-4f)
+								{
+									Ray shadowRay(hitPoint + (geometricNormal * epsilon), toLight);
+									shadowRay.setTMax(distance - epsilon);
+
+									HitRecord shadowHit;
+									GeometryObject* blocker = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit);
+
+									if (blocker == nullptr || blocker == areaLight || (meshLight != nullptr && blocker->getMeshLight() == meshLight))
+									{
+										Vector3D<float> wmLight = halfSum / halfLen;
+
+										// f * cos(wi) without F*specular, which the branch choice already paid for
+										float fCos = (GGXD(wmLight.z, alpha) * SmithG2(woLocal.z, wiLight.z, alpha)) / (4.0f * woLocal.z);
+
+										float lightPdf = lightPdfSolidAngle(pdfArea, distance, cosLight);
+										float bsdfPdfLight = GGXReflectionPdf(woLocal.z, wmLight.z, alpha);
+
+										specularDirect = lightEmission * (fCos * PowerHeuristic(lightPdf, bsdfPdfLight) / lightPdf);
+									}
+								}
+							}
+						}
+
 						Vector3D<float> wh = Sampler::GGXVNDF(woLocal, alpha, r1, r2);
 						Vector3D<float> wiLocal = (wh * 2.0f * (woLocal * wh)) - woLocal;
 
@@ -677,13 +760,18 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						{
 							newDir = toWorld(wiLocal, shadingNormal);
 							tint = Vector3D<float>(1.0f, 1.0f, 1.0f) * SmithG2OverG1(woLocal.z, wiLocal.z, alpha);
+
+							if (alpha >= 1e-3f)
+							{
+								bsdfPdf = GGXReflectionPdf(woLocal.z, wh.z, alpha);
+							}
 						}
 					}
 				}
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
-				color += (tint % rayPath(newRay, bvh, nBounces - 1, passEmission)) * diffuseGain * (1.0f - refraction_gain);
+				color += ((tint % rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
 			}
 		}
 	}
