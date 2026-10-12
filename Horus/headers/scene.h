@@ -52,6 +52,7 @@ class Scene {
 
 		bool gammaCorrectionSet = false;
 		GammaCorrection gammaCorrection = GammaCorrection::GAMMA2;
+		bool gammaCorrectionEnabled = true;
 
 		int32_t numberOfSamples = 10; //100
 		int bounces = 5;

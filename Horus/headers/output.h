@@ -3,9 +3,12 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <ImfRgbaFile.h>
+#include <ImfArray.h>
 
 enum class RenderOutput {
-	PPM
+	PPM,
+	EXR
 };
 
 class Output
@@ -41,4 +44,5 @@ class Output
 		std::vector<Vector3D<float>> buffer;
 
 		void writePPM();
+		void writeExr();
 };

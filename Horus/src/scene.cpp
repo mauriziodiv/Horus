@@ -13,7 +13,8 @@ bool parseFloat(std::string_view token, float& v)
 }
 
 std::unordered_map<std::string_view, RenderOutput> renderOutputMap = {
-	{ "ppm", RenderOutput::PPM }
+	{ "ppm", RenderOutput::PPM },
+	{ "exr", RenderOutput::EXR }
 };
 
 std::unordered_map<std::string_view, GammaCorrection> gammaCorrectionMap = {
@@ -155,7 +156,7 @@ bool Scene::setGammaCorrection(const std::string_view gc)
 {
 	std::string_view par = (gc.front() == '-') ? gc.substr(1) : gc;
 
-	if (gammaCorrectionMap.find(par) == gammaCorrectionMap.end())
+	if (gammaCorrectionMap.find(par) == gammaCorrectionMap.end() || !gammaCorrectionEnabled)
 	{
 		return false;
 	}
@@ -223,6 +224,29 @@ bool Scene::setFilePathWrite(const std::string_view& path)
 	{
 		std::cout << "Invalid file path for writing!" << std::endl;
 		return false;
+	}
+
+	size_t dot = par.rfind('.');
+
+	if (dot == std::string_view::npos)
+	{
+		std::cout << "No extension found in file path!" << std::endl;
+		return false;
+	}
+
+	std::string_view extension = par.substr(dot + 1);
+
+	auto it = renderOutputMap.find(extension);
+
+	if (it == renderOutputMap.end())
+	{
+		std::cout << "Unsupported file extension!" << std::endl;
+		return false;
+	}
+
+	if (extension == "exr")
+	{
+		gammaCorrectionEnabled = false;
 	}
 
 	filePathWrite = par;
