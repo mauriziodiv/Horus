@@ -396,6 +396,14 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				subsurfaceGain = surface->getSubsurfaceGain(uv);
 
+				// On a subsurface material the gain (or its map) is the weight between the surface (0) and the
+				// subsurface walk (1). Without this, a weight of 0 would fall through to clear-glass refraction.
+				if (surface->hasSubsurface())
+				{
+					refraction_gain = subsurfaceGain;
+					subsurfaceGain = 1.0f;
+				}
+
 				medium = surface->getMedium();
 			}
 

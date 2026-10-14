@@ -185,6 +185,12 @@ class Surface : public BxDF
 			return subsurfaceGain;
 		}
 
+		// True when the material scatters below the surface (a constant gain > 0 or a gain map)
+		bool hasSubsurface()
+		{
+			return subsurfaceGainTex.isLoaded() || subsurfaceGain > 0.0f;
+		}
+
 		Vector3D<float> getSubsurfaceColor()
 		{
 			return subsurfaceColor;
