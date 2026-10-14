@@ -24,6 +24,10 @@ class Scene {
 		bool setSamples(const std::string_view s);
 		bool setBounces(const std::string_view b);
 		bool setDiffuseAOV(const std::string_view d);
+		bool setSpecularAOV(const std::string_view s);
+		bool setEmissionAOV(const std::string_view e);
+		bool setRefractionAOV(const std::string_view r);
+		bool setSubsurfaceScatteringAOV(const std::string_view sss);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -49,6 +53,10 @@ class Scene {
 		RenderOutput renderOutput = RenderOutput::PPM;
 		Output output;
 		size_t diffuseLayer = 0;
+		size_t specularLayer = 0;
+		size_t emissionLayer = 0;
+		size_t refractionLayer = 0;
+		size_t subsurfaceScatteringLayer = 0;
 		std::string_view filePathWrite;
 
 		bool gammaCorrectionSet = false;
@@ -61,4 +69,8 @@ class Scene {
 		float height = 400.0f;
 
 		bool diffuseAOVEnabled = false;
+		bool specularAOVEnabled = false;
+		bool emissionAOVEnabled = false;
+		bool refractionAOVEnabled = false;
+		bool subsurfaceScatteringAOVEnabled = false;
 };

@@ -29,6 +29,15 @@ bool inputValidation(const std::vector<std::string>& inputDescription)
 	return true;
 }
 
+void setAOVs(Scene& scene, std::string s)
+{
+	scene.setDiffuseAOV(s);
+	scene.setSpecularAOV(s);
+	scene.setEmissionAOV(s);
+	scene.setRefractionAOV(s);
+	scene.setSubsurfaceScatteringAOV(s);
+};
+
 // The main function of the program.
 int main(int argc, char* argv[])
 {
@@ -112,7 +121,34 @@ int main(int argc, char* argv[])
 	// diffuse AOV
 	if (inputDescription.size() > 6 && !inputDescription[6].empty())
 	{
-		scene.setDiffuseAOV(inputDescription[6]);
+		//scene.setDiffuseAOV(inputDescription[6]);
+		setAOVs(scene, inputDescription[6]);
+	}
+
+	// specular AOV
+	if (inputDescription.size() > 7 && !inputDescription[7].empty())
+	{
+		//scene.setSpecularAOV(inputDescription[7]);
+		setAOVs(scene, inputDescription[7]);
+	}
+
+	// emission AOV
+	if (inputDescription.size() > 8 && !inputDescription[8].empty())
+	{
+		//scene.setEmissionAOV(inputDescription[8]);
+		setAOVs(scene, inputDescription[8]);
+	}
+
+	if (inputDescription.size() > 9 && !inputDescription[9].empty())
+	{
+		//scene.setRefractionAOV(inputDescription[9]);
+		setAOVs(scene, inputDescription[9]);
+	}
+
+	if (inputDescription.size() > 10 && !inputDescription[10].empty())
+	{
+		//scene.setSubsurfaceScatteringAOV(inputDescription[10]);
+		setAOVs(scene, inputDescription[10]);
 	}
 
 	// Get scene from scene objects

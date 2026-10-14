@@ -314,8 +314,22 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 	meshLights = ml;
 }
 
+// Caps a sample's brightest channel at maxValue, keeping its hue - removes fireflies (slightly biased)
+static Vector3D<float> clampSample(Vector3D<float> c, float maxValue)
+{
+	float m = (c.x > c.y) ? c.x : c.y;
+	m = (m > c.z) ? m : c.z;
+
+	if (m > maxValue)
+	{
+		c = c * (maxValue / m);
+	}
+
+	return c;
+}
+
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV)
 {
 	HitRecord hit;
 
@@ -438,7 +452,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						{
 							float angleContribution = (cos_surface * cos_light) / (distance * distance);
 
-							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI);
+							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI) * (1.0f - refraction_gain);
 							lightsContribution = rddap * lightObjectsCount;
 
 							color += lightsContribution;
@@ -478,7 +492,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				if (bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit) == nullptr)
 				{
 					//color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / s.pdf;
-					dome_contribution = (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI);
+					dome_contribution = (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI) * (1.0f - refraction_gain);
 					color += dome_contribution;
 				}
 
@@ -505,7 +519,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
 					}
 
-					color += al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure()) * misWeight;
+					Vector3D<float> emission = al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure()) * misWeight;
+					color += emission;
+
+					if (emissionAOV)
+					{
+						*emissionAOV += emission;
+					}
 				}
 
 				if (closestHit->getMeshLight() != nullptr)
@@ -523,6 +543,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					//color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
 					Vector3D<float> meshLightContribution = ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
 					color += meshLightContribution;
+
+					if (emissionAOV)
+					{
+						*emissionAOV += meshLightContribution;
+					}
 				}
 			}
 
@@ -600,14 +625,29 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						Ray refracted = ray;
 						refracted.setOrigin(hitPoint - (normal * epsilon));
 						refracted.refract(dir, normal, k, cos_i, ratio);
+
+						Vector3D<float> refractionContribution(0.0f, 0.0f, 0.0f);
 						
 						if (subsurfaceGain > 0.0f)
 						{
-							color += subsurfaceWalk(refracted, bvh, medium, IOR, nBounces) * refraction_gain * subsurfaceGain;
+							refractionContribution = clampSample(subsurfaceWalk(refracted, bvh, medium, IOR, nBounces), 10.0f) * refraction_gain * subsurfaceGain;
+							color += refractionContribution;
+
+							if (subsurfaceScatteringAOV)
+							{
+								*subsurfaceScatteringAOV += refractionContribution;
+							}
+							
 						}
 						else
 						{
-							color += rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
+							refractionContribution = rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
+							color += refractionContribution;
+
+							if (refractionAOV)
+							{
+								*refractionAOV += refractionContribution;
+							}
 						}
 					}
 				}
@@ -724,6 +764,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				if (diffuseAOV && isDiffuseBranch)
 				{
 					*diffuseAOV += indirectContribution;
+				}
+
+				if (specularAOV && !isDiffuseBranch)
+				{
+					*specularAOV += indirectContribution;
 				}
 			}
 		}

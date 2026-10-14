@@ -217,6 +217,78 @@ bool Scene::setDiffuseAOV(const std::string_view d)
 	return false;
 }
 
+bool Scene::setSpecularAOV(const std::string_view s)
+{
+	if (s.empty())
+	{
+		return false;
+	}
+
+	std::string_view specular_token = (s.front() == '-') ? s.substr(1) : s;
+
+	if (specular_token == "s")
+	{
+		std::cout << "Specular AOV is enabled!" << std::endl;
+		specularAOVEnabled = true;
+	}
+
+	return false;
+}
+
+bool Scene::setEmissionAOV(const std::string_view e)
+{
+	if (e.empty())
+	{
+		return false;
+	}
+
+	std::string_view emission_token = (e.front() == '-') ? e.substr(1) : e;
+
+	if (emission_token == "e")
+	{
+		std::cout << "Emission AOV is enabled!" << std::endl;
+		emissionAOVEnabled = true;
+	}
+
+	return false;
+}
+
+bool Scene::setRefractionAOV(const std::string_view r)
+{
+	if (r.empty())
+	{
+		return false;
+	}
+
+	std::string_view refraction_token = (r.front() == '-') ? r.substr(1) : r;
+
+	if (refraction_token == "r")
+	{
+		std::cout << "Refraction AOV is enabled!" << std::endl;
+		refractionAOVEnabled = true;
+	}
+
+	return false;
+}
+
+bool Scene::setSubsurfaceScatteringAOV(const std::string_view sb)
+{
+	if (sb.empty())
+	{
+		return false;
+	}
+
+	std::string_view sss_token = (sb.front() == '-') ? sb.substr(1) : sb;
+
+	if (sss_token == "sb")
+	{
+		std::cout << "Subsurface Scattering AOV is enabled!" << std::endl;
+		subsurfaceScatteringAOVEnabled = true;
+	}
+
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -272,6 +344,26 @@ void Scene::render()
 		diffuseLayer = output.addLayer("diffuse");
 	}
 
+	if (specularAOVEnabled)
+	{
+		specularLayer = output.addLayer("specular");
+	}
+
+	if (emissionAOVEnabled)
+	{
+		emissionLayer = output.addLayer("emission");
+	}
+
+	if (refractionAOVEnabled)
+	{
+		refractionLayer = output.addLayer("refraction");
+	}
+
+	if (subsurfaceScatteringAOVEnabled)
+	{
+		subsurfaceScatteringLayer = output.addLayer("subsurface_scattering");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -295,6 +387,10 @@ void Scene::render()
 
 				Vector3D<float> color(0.0f, 0.0f, 0.0f);
 				Vector3D<float> diffuseAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> specularAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> emissionAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> refractionAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
 
 				Ray ray(camera->genRay(u, v));
 
@@ -308,11 +404,15 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV);
 				}
 
 				color /= (float)numberOfSamples;
 				diffuseAOV /= (float)numberOfSamples;
+				specularAOV /= (float)numberOfSamples;
+				emissionAOV /= (float)numberOfSamples;
+				refractionAOV /= (float)numberOfSamples;
+				subsurfaceScatteringAOV /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
 				{
@@ -334,6 +434,26 @@ void Scene::render()
 				if (diffuseAOVEnabled)
 				{
 					output.writeLayer(diffuseLayer, static_cast<size_t>((height - 1 - i) * width + j), diffuseAOV);
+				}
+				
+				if (specularAOVEnabled)
+				{
+					output.writeLayer(specularLayer, static_cast<size_t>((height - 1 - i) * width + j), specularAOV);
+				}
+
+				if (emissionAOVEnabled)
+				{
+					output.writeLayer(emissionLayer, static_cast<size_t>((height - 1 - i) * width + j), emissionAOV);
+				}
+
+				if (refractionAOVEnabled)
+				{
+					output.writeLayer(refractionLayer, static_cast<size_t>((height - 1 - i) * width + j), refractionAOV);
+				}
+
+				if (subsurfaceScatteringAOVEnabled)
+				{
+					output.writeLayer(subsurfaceScatteringLayer, static_cast<size_t>((height - 1 - i) * width + j), subsurfaceScatteringAOV);
 				}
 			}
 		};
