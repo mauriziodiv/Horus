@@ -1,10 +1,17 @@
 #pragma once
 #include "vec_math.h"
 #include <vector>
+#include <string>
 #include <iostream>
 #include <fstream>
-#include <ImfRgbaFile.h>
-#include <ImfArray.h>
+//#include <ImfRgbaFile.h>
+//#include <ImfArray.h>
+
+struct Layer
+{
+	std::string name;
+	std::vector<Vector3D<float>> buffer;
+};
 
 enum class RenderOutput {
 	PPM,
@@ -32,6 +39,18 @@ class Output
 		void allocateBuffer() { buffer.assign((size_t)width * (size_t)height, Vector3D<float>(0.0f, 0.0f, 0.0f)); };
 		void writeBuffer(size_t index, Vector3D<float> value) { buffer[index] = value; };
 
+		size_t addLayer(const std::string& name)
+		{
+			layers.push_back(Layer{ name, std::vector<Vector3D<float>>((size_t)width * (size_t)height, Vector3D<float>(0.0f, 0.0f, 0.0f)) });
+
+			return layers.size() - 1;
+		}
+
+		void writeLayer(size_t layer, size_t index, Vector3D<float> value)
+		{
+			layers[layer].buffer[index] = value;
+		}
+
 		void write();
 
 	private:
@@ -42,6 +61,8 @@ class Output
 		float height = 0.0f;
 
 		std::vector<Vector3D<float>> buffer;
+
+		std::vector<Layer> layers;
 
 		void writePPM();
 		void writeExr();

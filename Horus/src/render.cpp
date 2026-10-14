@@ -315,9 +315,8 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV)
 {
-
 	HitRecord hit;
 
 	GeometryObject* closestHit = bvh.traversal(ray, ray.getTMin(), ray.getTMax(), hit);
@@ -361,44 +360,18 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			float IOR = 1.0f;
 
 			float subsurfaceGain = 0.0f;
-			//Vector3D<float> subsurfaceColor(1.0f, 1.0f, 1.0f);
-			//Vector3D<float> subsurfaceRadius(1.0f, 1.0f, 1.0f);
 
 			Vector3D<float> normal = geometricNormal;
 
 			Medium medium;
 
 			Vector3D<float> lightsContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
-			//Vector3D<float> meshLightsContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
 
 			if (auto surface = std::get_if<Surface>(&shader))
 			{
 				diffuseGain = surface->getDiffuseGain();
 
-				//normal = surface->getNormal(closestHit->getNormal());
 				surface->computeNormal(*closestHit, uv, normal);
-				//Vector3D<float> normalSample;
-
-				//if (closestHit->getHasTangents() && surface->getNormalSample(normalSample))
-				//{
-				//	Vector3D<float> T = closestHit->getTangent();
-				//	Vector3D<float> B = closestHit->getBitangent();
-
-				//	T = T - (normal * (T * normal));
-				//	T.normalize();
-
-				//	Vector3D<float> newB = normal | T;
-
-				//	if ((newB * B) < 0.0f)
-				//	{
-				//		newB = -newB;
-				//	}
-
-				//	B = newB;
-
-				//	normal = (T * normalSample.x) + (B * normalSample.y) + (normal * normalSample.z);
-				//	normal.normalize();
-				//}
 				
 				diffuseColor = surface->getDiffuseColor(uv);
 				roughness = surface->getRoughness(uv);
@@ -408,8 +381,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				IOR = surface->getIOR();
 
 				subsurfaceGain = surface->getSubsurfaceGain(uv);
-				//subsurfaceColor = surface->getSubsurfaceColor();
-				//subsurfaceRadius = surface->getSubsurfaceRadius();
 
 				medium = surface->getMedium();
 			}
@@ -419,8 +390,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 			float cosTheta = std::abs(viewDir * normal);
 
-			//float F_0 = ((1.0f - IOR) / (1.0f + IOR)) * ((1.0f - IOR) / (1.0f + IOR));
-			//float F = F_0 + (1.0f - F_0) * pow(1.0f - cos_schlick, 5.0f);
 			float F = Schlick(IOR, cosTheta);
 
 			if (std::abs(IOR - 1.0f) < 1e-4f)
@@ -430,17 +399,10 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 			bool isDiffuseBranch = unitRandom.Generate() >= (F * specular);
 
-			//bool isBelowRoughness = unitRandom.Generate() < roughness;
-			// Area and meshLight light sampling
-			// if (!areaLights.empty() || !meshLights.empty())
 			if (isDiffuseBranch && (!areaLights.empty() || !meshLights.empty()))
 			{
-				//float rnd = unitRandom.Generate() * areaLights.size();
 				AreaLight* areaLight = nullptr;
 				MeshLight* meshLight = nullptr;
-
-				//float x_rnd = 0.0f;
-				//float z_rnd = 0.0f;
 
 				size_t lightObjectsCount = 0;
 
@@ -453,33 +415,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				float epsilon = 0.001f;
 				float distance = 0.0f;
 
-				//if (lightObjectsCount > 0)
-				//{
-				//	if (rndLightIndex < areaLights.size())
-				//	{
-				//		
-				//		
-				//	}
-				//	else
-				//	{
-						// Handle mesh light
-						//meshLight = meshLights[static_cast<int>(rndLightIndex - areaLights.size())];
-						//
-						//float rndTriangle = unitRandom.Generate();
-						//float rU = unitRandom.Generate();
-						//float rV = unitRandom.Generate();
-
-						//LightSample lightSample = meshLight->sampleLight(rndTriangle, rU, rV);
-						//lightPos = lightSample.position;
-						//lightNormal = lightSample.normal;
-						//lightEmission = meshLight->getColor() * meshLight->getIntensity() * std::pow(2.0f, meshLight->getExposure());
-						//pdfArea = lightSample.pdf;
-
 				if (sampleLightSource(areaLight, meshLight, lightPos, lightNormal, lightEmission, pdfArea, lightObjectsCount))
 				{
-					//	}
-					//}
-
 					Vector3D<float> shadowRayDir = lightPos - hitPoint;
 					shadowRay.setOrigin(hitPoint + (geometricNormal * epsilon));
 
@@ -500,8 +437,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						if (cos_surface >= 0 && cos_light >= 0)
 						{
 							float angleContribution = (cos_surface * cos_light) / (distance * distance);
-							//Vector3D<float> rawLight = areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
-							//float pdfArea = 1.0f / (areaLight->getWidth() * areaLight->getHeight());
 
 							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI);
 							lightsContribution = rddap * lightObjectsCount;
@@ -662,6 +597,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					}
 				}
 			}
+
 			if (refraction_gain < 1.0f)
 			{
 				Vector3D<float> newDir;
@@ -681,10 +617,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				}
 				else
 				{
-					//newDir = reflectedDir;
-					//tint = Vector3D<float>(1.0f, 1.0f, 1.0f);
-					//passEmission = true;
-
 					float alpha = roughness * roughness;
 
 					Vector3D<float> wo = -viewDir;

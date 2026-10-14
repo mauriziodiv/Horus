@@ -1,7 +1,16 @@
 #include "output.h"
+#include <ImfOutputFile.h>
+#include <ImfHeader.h>
+#include <ImfChannelList.h>
+#include <ImfFrameBuffer.h>
 
 void Output::writePPM()
 {
+	if (!layers.empty())
+	{
+		std::cout << "PPM format does not support layers. Only the main buffer will be written." << std::endl;
+	}
+
 	std::ofstream file(filePathWrite.data());
 
 	file << "P3\n" << (int)width << " " << (int)height << "\n255\n";
@@ -12,30 +21,64 @@ void Output::writePPM()
 	}
 
 	buffer.clear();
+	layers.clear();
 }
 
 void Output::writeExr()
 {
-	Imf::Array2D<Imf::Rgba> pixels((int)height, (int)width);
-	
-	for (int y = 0; y< (int)height; y++)
-	{
-		for (int x = 0; x < (int)width; x++)
-		{
-			const Vector3D<float>& pixelData = buffer[(size_t)y * (size_t)width + x];
+	//Imf::Array2D<Imf::Rgba> pixels((int)height, (int)width);
+	//
+	//for (int y = 0; y< (int)height; y++)
+	//{
+	//	for (int x = 0; x < (int)width; x++)
+	//	{
+	//		const Vector3D<float>& pixelData = buffer[(size_t)y * (size_t)width + x];
 
-			pixels[y][x].r = pixelData.x;
-			pixels[y][x].g = pixelData.y;
-			pixels[y][x].b = pixelData.z;
-			pixels[y][x].a = 1.0f;
-		}
+	//		pixels[y][x].r = pixelData.x;
+	//		pixels[y][x].g = pixelData.y;
+	//		pixels[y][x].b = pixelData.z;
+	//		pixels[y][x].a = 0.0f;
+	//	}
+	//}
+
+	
+
+	//buffer.clear();
+
+	Imf::Header header((int)width, (int)height);
+
+	//header.channels().insert("R", Imf::Channel(Imf::FLOAT));
+	//header.channels().insert("G", Imf::Channel(Imf::FLOAT));
+	//header.channels().insert("B", Imf::Channel(Imf::FLOAT));
+
+	Imf::FrameBuffer frameBuffer;
+
+	const size_t xStride = sizeof(Vector3D<float>);
+	const size_t yStride = sizeof(Vector3D<float>) * (size_t)width;
+
+	auto addRgb = [&](const std::string& name, const std::vector<Vector3D<float>>& rgbBuffer)
+	{
+		header.channels().insert(name + "R", Imf::Channel(Imf::FLOAT));
+		header.channels().insert(name + "G", Imf::Channel(Imf::FLOAT));
+		header.channels().insert(name + "B", Imf::Channel(Imf::FLOAT));
+
+		frameBuffer.insert(name + "R", Imf::Slice(Imf::FLOAT, (char*)&rgbBuffer[0].x, xStride, yStride));
+		frameBuffer.insert(name + "G", Imf::Slice(Imf::FLOAT, (char*)&rgbBuffer[0].y, xStride, yStride));
+		frameBuffer.insert(name + "B", Imf::Slice(Imf::FLOAT, (char*)&rgbBuffer[0].z, xStride, yStride));
+	};
+
+	addRgb("", buffer);
+
+	for (const Layer& layer : layers)
+	{
+		addRgb(layer.name + ".", layer.buffer);
 	}
 
 	try
 	{
-		Imf::RgbaOutputFile file(filePathWrite.data(), (int)width, (int)height, Imf::WRITE_RGBA);
+		Imf::OutputFile file(filePathWrite.data(), header);
 
-		file.setFrameBuffer(&pixels[0][0], 1, (size_t)width);
+		file.setFrameBuffer(frameBuffer);
 		file.writePixels((int)height);
 	}
 	catch (const std::exception& e)
@@ -44,6 +87,7 @@ void Output::writeExr()
 	}
 
 	buffer.clear();
+	layers.clear();
 }
 
 void Output::write()

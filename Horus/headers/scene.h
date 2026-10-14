@@ -23,6 +23,7 @@ class Scene {
 		bool setWindow(const std::string_view wSize);
 		bool setSamples(const std::string_view s);
 		bool setBounces(const std::string_view b);
+		bool setDiffuseAOV(const std::string_view d);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -47,6 +48,7 @@ class Scene {
 
 		RenderOutput renderOutput = RenderOutput::PPM;
 		Output output;
+		size_t diffuseLayer = 0;
 		std::string_view filePathWrite;
 
 		bool gammaCorrectionSet = false;
@@ -57,4 +59,6 @@ class Scene {
 		int bounces = 5;
 		float width = 400.0f;
 		float height = 400.0f;
+
+		bool diffuseAOVEnabled = false;
 };

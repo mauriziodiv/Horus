@@ -199,6 +199,24 @@ bool Scene::setBounces(const std::string_view b)
 	return true;
 }
 
+bool Scene::setDiffuseAOV(const std::string_view d)
+{
+	if (d.empty())
+	{
+		return false;
+	}
+
+	std::string_view diffuse_token = (d.front() == '-') ? d.substr(1) : d;
+
+	if (d.substr(1) == "d")
+	{
+		std::cout << "Diffuse AOV is enabled!" << std::endl;
+		diffuseAOVEnabled = true;
+	}
+
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -249,6 +267,11 @@ void Scene::render()
 	output.setHeight(getHeight());
 	output.allocateBuffer();
 
+	if (diffuseAOVEnabled)
+	{
+		diffuseLayer = output.addLayer("diffuse");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -261,7 +284,6 @@ void Scene::render()
 	BVH bvh;
 	bvh.buildBVH(geometries);
 
-	//for (int i = height - 1; i >= 0; --i)
 	auto renderRow = [&](int i, Integrator& integrator)
 		{
 			for (int j = 0; j < width; ++j)
@@ -272,6 +294,7 @@ void Scene::render()
 				float v = (float)i / (height - 1);
 
 				Vector3D<float> color(0.0f, 0.0f, 0.0f);
+				Vector3D<float> diffuseAOV(1.0f, 0.0f, 0.0f);
 
 				Ray ray(camera->genRay(u, v));
 
@@ -285,10 +308,11 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV);
 				}
 
 				color /= (float)numberOfSamples;
+				diffuseAOV /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
 				{
@@ -306,12 +330,13 @@ void Scene::render()
 				}
 
 				output.writeBuffer(static_cast<size_t>((height - 1 - i) * width + j), color);
+
+				if (diffuseAOVEnabled)
+				{
+					output.writeLayer(diffuseLayer, static_cast<size_t>((height - 1 - i) * width + j), diffuseAOV);
+				}
 			}
 		};
-
-	//Integrator integrator(lights);
-	//integrator.addAreaLights(areaLights);
-	//integrator.addMeshLights(meshLights);
 
 	unsigned int threadCount = std::thread::hardware_concurrency();
 

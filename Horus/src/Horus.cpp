@@ -109,6 +109,12 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	// diffuse AOV
+	if (inputDescription.size() > 6 && !inputDescription[6].empty())
+	{
+		scene.setDiffuseAOV(inputDescription[6]);
+	}
+
 	// Get scene from scene objects
 	if (!scene.getScene(sceneObjects)) { return 1; }
 
