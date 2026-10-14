@@ -442,6 +442,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 							lightsContribution = rddap * lightObjectsCount;
 
 							color += lightsContribution;
+							
+							if (diffuseAOV)
+							{
+								*diffuseAOV += lightsContribution;
+							}
 						}
 					}
 				}
@@ -468,10 +473,18 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				HitRecord shadowHit;
 
+				Vector3D<float> dome_contribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
+
 				if (bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit) == nullptr)
 				{
 					//color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / s.pdf;
-					color += (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI);
+					dome_contribution = (s.radiance % diffuseColor) * diffuseGain * cos_surface / (s.pdf * PI);
+					color += dome_contribution;
+				}
+
+				if (diffuseAOV)
+				{
+					*diffuseAOV += dome_contribution;
 				}
 			}
 
@@ -507,7 +520,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
 					}
 
-					color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
+					//color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
+					Vector3D<float> meshLightContribution = ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
+					color += meshLightContribution;
 				}
 			}
 
@@ -703,7 +718,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
-				color += ((tint % rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
+				Vector3D<float> indirectContribution = ((tint % rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
+				color += indirectContribution;
+
+				if (diffuseAOV && isDiffuseBranch)
+				{
+					*diffuseAOV += indirectContribution;
+				}
 			}
 		}
 	}

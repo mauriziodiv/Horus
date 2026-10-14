@@ -26,30 +26,7 @@ void Output::writePPM()
 
 void Output::writeExr()
 {
-	//Imf::Array2D<Imf::Rgba> pixels((int)height, (int)width);
-	//
-	//for (int y = 0; y< (int)height; y++)
-	//{
-	//	for (int x = 0; x < (int)width; x++)
-	//	{
-	//		const Vector3D<float>& pixelData = buffer[(size_t)y * (size_t)width + x];
-
-	//		pixels[y][x].r = pixelData.x;
-	//		pixels[y][x].g = pixelData.y;
-	//		pixels[y][x].b = pixelData.z;
-	//		pixels[y][x].a = 0.0f;
-	//	}
-	//}
-
-	
-
-	//buffer.clear();
-
 	Imf::Header header((int)width, (int)height);
-
-	//header.channels().insert("R", Imf::Channel(Imf::FLOAT));
-	//header.channels().insert("G", Imf::Channel(Imf::FLOAT));
-	//header.channels().insert("B", Imf::Channel(Imf::FLOAT));
 
 	Imf::FrameBuffer frameBuffer;
 

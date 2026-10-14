@@ -208,7 +208,7 @@ bool Scene::setDiffuseAOV(const std::string_view d)
 
 	std::string_view diffuse_token = (d.front() == '-') ? d.substr(1) : d;
 
-	if (d.substr(1) == "d")
+	if (diffuse_token == "d")
 	{
 		std::cout << "Diffuse AOV is enabled!" << std::endl;
 		diffuseAOVEnabled = true;
@@ -294,7 +294,7 @@ void Scene::render()
 				float v = (float)i / (height - 1);
 
 				Vector3D<float> color(0.0f, 0.0f, 0.0f);
-				Vector3D<float> diffuseAOV(1.0f, 0.0f, 0.0f);
+				Vector3D<float> diffuseAOV(0.0f, 0.0f, 0.0f);
 
 				Ray ray(camera->genRay(u, v));
 
