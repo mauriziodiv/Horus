@@ -329,7 +329,7 @@ static Vector3D<float> clampSample(Vector3D<float> c, float maxValue)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV)
 {
 	HitRecord hit;
 
@@ -382,6 +382,12 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			float subsurfaceGain = 0.0f;
 
 			Vector3D<float> normal = geometricNormal;
+
+			if (isPrimary && normalAOV)
+			{
+				*normalAOV += normal;
+			}
+			
 
 			Medium medium;
 

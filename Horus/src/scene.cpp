@@ -289,6 +289,24 @@ bool Scene::setSubsurfaceScatteringAOV(const std::string_view sb)
 	return false;
 }
 
+bool Scene::setNormalAOV(const std::string_view n)
+{
+	if (n.empty())
+	{
+		return false;
+	}
+
+	std::string_view normal_token = (n.front() == '-') ? n.substr(1) : n;
+
+	if (normal_token == "n")
+	{
+		std::cout << "Normal AOV is enabled!" << std::endl;
+		normalAOVEnabled = true;
+	}
+
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -364,6 +382,11 @@ void Scene::render()
 		subsurfaceScatteringLayer = output.addLayer("subsurface_scattering");
 	}
 
+	if (normalAOVEnabled)
+	{
+		normalLayer = output.addLayer("normal");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -391,6 +414,7 @@ void Scene::render()
 				Vector3D<float> emissionAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> refractionAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> normalAOV(0.0f, 0.0f, 0.0f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
@@ -405,7 +429,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV);
 				}
 
 				color /= (float)numberOfSamples;
@@ -414,6 +438,7 @@ void Scene::render()
 				emissionAOV /= (float)numberOfSamples;
 				refractionAOV /= (float)numberOfSamples;
 				subsurfaceScatteringAOV /= (float)numberOfSamples;
+				normalAOV /= (float)numberOfSamples;
 				alpha /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
@@ -457,6 +482,11 @@ void Scene::render()
 				if (subsurfaceScatteringAOVEnabled)
 				{
 					output.writeLayer(subsurfaceScatteringLayer, static_cast<size_t>((height - 1 - i) * width + j), subsurfaceScatteringAOV);
+				}
+
+				if (normalAOVEnabled)
+				{
+					output.writeLayer(normalLayer, static_cast<size_t>((height - 1 - i) * width + j), normalAOV);
 				}
 			}
 		};

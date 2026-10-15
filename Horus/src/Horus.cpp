@@ -36,6 +36,7 @@ void setAOVs(Scene& scene, std::string s)
 	scene.setEmissionAOV(s);
 	scene.setRefractionAOV(s);
 	scene.setSubsurfaceScatteringAOV(s);
+	scene.setNormalAOV(s);
 };
 
 // The main function of the program.
@@ -149,6 +150,12 @@ int main(int argc, char* argv[])
 	{
 		//scene.setSubsurfaceScatteringAOV(inputDescription[10]);
 		setAOVs(scene, inputDescription[10]);
+	}
+
+	if (inputDescription.size() > 11 && !inputDescription[11].empty())
+	{
+		//scene.setNormalAOV(inputDescription[11]);
+		setAOVs(scene, inputDescription[11]);
 	}
 
 	// Get scene from scene objects

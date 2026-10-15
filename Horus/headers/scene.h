@@ -28,6 +28,7 @@ class Scene {
 		bool setEmissionAOV(const std::string_view e);
 		bool setRefractionAOV(const std::string_view r);
 		bool setSubsurfaceScatteringAOV(const std::string_view sss);
+		bool setNormalAOV(const std::string_view n);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -57,6 +58,7 @@ class Scene {
 		size_t emissionLayer = 0;
 		size_t refractionLayer = 0;
 		size_t subsurfaceScatteringLayer = 0;
+		size_t normalLayer = 0;
 		std::string_view filePathWrite;
 
 		bool gammaCorrectionSet = false;
@@ -73,4 +75,5 @@ class Scene {
 		bool emissionAOVEnabled = false;
 		bool refractionAOVEnabled = false;
 		bool subsurfaceScatteringAOVEnabled = false;
+		bool normalAOVEnabled = false;
 };
