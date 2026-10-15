@@ -1,5 +1,22 @@
 #include "render.h"
 
+// Max brightness a single bounce (or SSS walk) may return - removes fireflies (slightly biased)
+static const float maxIndirect = 10.0f;
+
+// Caps a sample's brightest channel at maxValue, keeping its hue - removes fireflies (slightly biased)
+static Vector3D<float> clampSample(Vector3D<float> c, float maxValue)
+{
+	float m = (c.x > c.y) ? c.x : c.y;
+	m = (m > c.z) ? m : c.z;
+
+	if (m > maxValue)
+	{
+		c = c * (maxValue / m);
+	}
+
+	return c;
+}
+
 // Converts a vector from local space to world space based on the normal at the hit point and a reference vector.
 Vector3D<float> Integrator::toWorld(Vector3D<float> v, Vector3D<float> refVector)
 {
@@ -27,7 +44,7 @@ Vector3D<float> Integrator::toWorld(Vector3D<float> v, Vector3D<float> refVector
 void Integrator::reflect(Vector3D<float> hp, Vector3D<float> normal, Vector3D<float> refDir, BVH& bvh, int nBounces, float refGain, Vector3D<float>& col)
 {
 	Ray newRay(hp + (normal * 0.001f), refDir);
-	col += rayPath(newRay, bvh, nBounces - 1) * refGain;
+	col += clampSample(rayPath(newRay, bvh, nBounces - 1), maxIndirect) * refGain;
 }
 
 // Subsurface scattering simulation using a random walk approach.
@@ -312,20 +329,6 @@ void Integrator::addAreaLights(std::vector<AreaLight*>& al)
 void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 {
 	meshLights = ml;
-}
-
-// Caps a sample's brightest channel at maxValue, keeping its hue - removes fireflies (slightly biased)
-static Vector3D<float> clampSample(Vector3D<float> c, float maxValue)
-{
-	float m = (c.x > c.y) ? c.x : c.y;
-	m = (m > c.z) ? m : c.z;
-
-	if (m > maxValue)
-	{
-		c = c * (maxValue / m);
-	}
-
-	return c;
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
@@ -649,7 +652,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						
 						if (subsurfaceGain > 0.0f)
 						{
-							refractionContribution = clampSample(subsurfaceWalk(refracted, bvh, medium, IOR, nBounces), 10.0f) * refraction_gain * subsurfaceGain;
+							refractionContribution = clampSample(subsurfaceWalk(refracted, bvh, medium, IOR, nBounces), maxIndirect) * refraction_gain * subsurfaceGain;
 							color += refractionContribution;
 
 							if (subsurfaceScatteringAOV)
@@ -660,7 +663,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						}
 						else
 						{
-							refractionContribution = rayPath(refracted, bvh, nBounces - 1) * refraction_gain;
+							refractionContribution = clampSample(rayPath(refracted, bvh, nBounces - 1), maxIndirect) * refraction_gain;
 							color += refractionContribution;
 
 							if (refractionAOV)
@@ -777,7 +780,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
-				Vector3D<float> indirectContribution = ((tint % rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
+				Vector3D<float> indirectContribution = ((tint % clampSample(rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf), maxIndirect)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
 				color += indirectContribution;
 
 				if (diffuseAOV && isDiffuseBranch)
