@@ -474,7 +474,12 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 						{
 							float angleContribution = (cos_surface * cos_light) / (distance * distance);
 
-							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI) * (1.0f - refraction_gain);
+							// MIS: the cosine-sampled diffuse bounce could have found this light too
+							float lightPdf = lightPdfSolidAngle(pdfArea, distance, cos_light);
+							float bsdfPdfLight = cos_surface / PI;
+							float misWeight = PowerHeuristic(lightPdf, bsdfPdfLight);
+
+							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI) * (1.0f - refraction_gain) * misWeight;
 							lightsContribution = rddap * lightObjectsCount;
 
 							color += lightsContribution;
@@ -524,21 +529,24 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				}
 			}
 
-			if (includeEmission)
+			// Lights count in full for camera/mirror/glass rays, and MIS-weighted for GGX and diffuse rays (bsdfPdf > 0)
+			if (includeEmission || bsdfPdf > 0.0f)
 			{
 				// distance travelled by the ray that found this light (ray direction may not be unit length)
 				float lightDistance = (hitPoint - ray.getOrigin()).getLength();
 
 				if (AreaLight* al = dynamic_cast<AreaLight*>(closestHit))
 				{
-					// MIS: if a GGX ray found this light, light sampling could have found it too
+					// MIS: if a GGX or diffuse ray found this light, light sampling could have found it too
 					float misWeight = 1.0f;
 
 					if (bsdfPdf > 0.0f)
 					{
 						float cosLight = al->getNormal() * -viewDir;
 						float lightPdf = lightPdfSolidAngle(1.0f / (al->getWidth() * al->getHeight()), lightDistance, cosLight);
-						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
+
+						// Back of the light: light sampling gives it nothing, so the MIS partner must too
+						misWeight = (lightPdf > 0.0f) ? PowerHeuristic(bsdfPdf, lightPdf) : 0.0f;
 					}
 
 					Vector3D<float> emission = al->getColor() * al->getIntensity() * std::pow(2.0f, al->getExposure()) * misWeight;
@@ -559,7 +567,9 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					{
 						float cosLight = geometricNormal * -viewDir;
 						float lightPdf = lightPdfSolidAngle(ml->getPdfArea(), lightDistance, cosLight);
-						misWeight = PowerHeuristic(bsdfPdf, lightPdf);
+
+						// Back of the light: light sampling gives it nothing, so the MIS partner must too
+						misWeight = (lightPdf > 0.0f) ? PowerHeuristic(bsdfPdf, lightPdf) : 0.0f;
 					}
 
 					//color += ml->getColor() * ml->getIntensity() * std::pow(2.0f, ml->getExposure()) * misWeight;
@@ -690,7 +700,8 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 					newDir = toWorld(rndDir, surfaceNormal);
 					tint = diffuseColor;
-					passEmission = false;
+					passEmission = false;			// the dome stays with dome NEE
+					bsdfPdf = rndDir.z / PI;		// cosine pdf: lets a light hit be MIS-weighted against light sampling
 				}
 				else
 				{
