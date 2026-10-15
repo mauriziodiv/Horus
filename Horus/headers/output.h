@@ -36,8 +36,12 @@ class Output
 		float getWidth() { return width; }
 		float getHeight() { return height; }
 
-		void allocateBuffer() { buffer.assign((size_t)width * (size_t)height, Vector3D<float>(0.0f, 0.0f, 0.0f)); };
+		void allocateBuffer() {
+			buffer.assign((size_t)width * (size_t)height, Vector3D<float>(0.0f, 0.0f, 0.0f));
+			alpha.assign((size_t)width * (size_t)height, 0.0f);
+		};
 		void writeBuffer(size_t index, Vector3D<float> value) { buffer[index] = value; };
+		void writeAlpha(size_t index, float value) { alpha[index] = value; };
 
 		size_t addLayer(const std::string& name)
 		{
@@ -61,6 +65,8 @@ class Output
 		float height = 0.0f;
 
 		std::vector<Vector3D<float>> buffer;
+
+		std::vector<float> alpha;
 
 		std::vector<Layer> layers;
 

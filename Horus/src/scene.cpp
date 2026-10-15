@@ -391,6 +391,7 @@ void Scene::render()
 				Vector3D<float> emissionAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> refractionAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
+				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
 
@@ -404,7 +405,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha);
 				}
 
 				color /= (float)numberOfSamples;
@@ -413,6 +414,7 @@ void Scene::render()
 				emissionAOV /= (float)numberOfSamples;
 				refractionAOV /= (float)numberOfSamples;
 				subsurfaceScatteringAOV /= (float)numberOfSamples;
+				alpha /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
 				{
@@ -430,6 +432,7 @@ void Scene::render()
 				}
 
 				output.writeBuffer(static_cast<size_t>((height - 1 - i) * width + j), color);
+				output.writeAlpha(static_cast<size_t>((height - 1 - i) * width + j), alpha);
 
 				if (diffuseAOVEnabled)
 				{

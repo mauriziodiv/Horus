@@ -329,7 +329,7 @@ static Vector3D<float> clampSample(Vector3D<float> c, float maxValue)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha)
 {
 	HitRecord hit;
 
@@ -340,6 +340,12 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 	if (closestHit)
 	{
+		// A camera sample that hits geometry counts towards the pixel's coverage (alpha)
+		if (isPrimary && alpha)
+		{
+			*alpha += 1.0f;
+		}
+
 		auto& shader = closestHit->getShader();
 
 		if (std::holds_alternative<Constant>(shader))
@@ -786,12 +792,22 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		if (includeEmission)
 		{
 			//background color
+			bool domeVisible = false;
+
 			for (LightObject* light : lights)
 			{
 				if (light->getLightType() == LightType::DOME && (light->getVisibility() || !isPrimary))
 				{
 					color += light->getRadiance(ray.getDirection());
+
+					domeVisible = true;
 				}
+			}
+
+			// A camera sample that sees a visible dome is covered too: the sky is part of the image
+			if (isPrimary && alpha && domeVisible)
+			{
+				*alpha += 1.0f;
 			}
 		}
 	}

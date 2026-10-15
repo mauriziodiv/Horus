@@ -21,6 +21,7 @@ void Output::writePPM()
 	}
 
 	buffer.clear();
+	alpha.clear();
 	layers.clear();
 }
 
@@ -45,6 +46,9 @@ void Output::writeExr()
 	};
 
 	addRgb("", buffer);
+	header.channels().insert("A", Imf::Channel(Imf::FLOAT));
+
+	frameBuffer.insert("A", Imf::Slice(Imf::FLOAT, (char*)&alpha[0], sizeof(float), sizeof(float) * (size_t)width));
 
 	for (const Layer& layer : layers)
 	{
@@ -64,6 +68,7 @@ void Output::writeExr()
 	}
 
 	buffer.clear();
+	alpha.clear();
 	layers.clear();
 }
 
