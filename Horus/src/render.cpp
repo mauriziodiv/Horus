@@ -383,12 +383,6 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 			Vector3D<float> normal = geometricNormal;
 
-			if (isPrimary && normalAOV)
-			{
-				*normalAOV += normal;
-			}
-			
-
 			Medium medium;
 
 			Vector3D<float> lightsContribution = Vector3D<float>(0.0f, 0.0f, 0.0f);
@@ -417,6 +411,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				}
 
 				medium = surface->getMedium();
+			}
+
+			if (isPrimary && normalAOV)
+			{
+				*normalAOV += normal;
 			}
 
 			Vector3D<float> viewDir = ray.getDirection();
