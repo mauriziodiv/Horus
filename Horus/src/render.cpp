@@ -332,7 +332,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV)
 {
 	HitRecord hit;
 
@@ -464,7 +464,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					HitRecord shadowHit;
 
 					GeometryObject* lightBVH = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit);
-
+					
 					if (lightBVH == nullptr || lightBVH == areaLight || (meshLight != nullptr && lightBVH->getMeshLight() == meshLight))
 					{
 						float cos_surface = normal * shadowRay.getDirection();
@@ -487,6 +487,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 							if (diffuseAOV)
 							{
 								*diffuseAOV += lightsContribution;
+							}
+
+							if (directLightAOV)
+							{
+								*directLightAOV += lightsContribution;
 							}
 						}
 					}
@@ -526,6 +531,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				if (diffuseAOV)
 				{
 					*diffuseAOV += dome_contribution;
+				}
+
+				if (directLightAOV)
+				{
+					*directLightAOV += dome_contribution;
 				}
 			}
 
@@ -763,6 +773,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 										float bsdfPdfLight = GGXReflectionPdf(woLocal.z, wmLight.z, alpha);
 
 										specularDirect = lightEmission * (fCos * PowerHeuristic(lightPdf, bsdfPdfLight) / lightPdf);
+									}
+
+									if (directLightAOV)
+									{
+										*directLightAOV += specularDirect * diffuseGain * (1.0f - refraction_gain);
 									}
 								}
 							}

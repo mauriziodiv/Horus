@@ -307,6 +307,23 @@ bool Scene::setNormalAOV(const std::string_view n)
 	return false;
 }
 
+bool Scene::setDirectLightAOV(const std::string_view d)
+{
+	if (d.empty())
+	{
+		return false;
+	}
+
+	std::string_view directLight_token = (d.front() == '-') ? d.substr(1) : d;
+
+	if (directLight_token == "dl")
+	{
+		std::cout << "Direct Light AOV is enabled!" << std::endl;
+		directLightAOVEnabled = true;
+	}
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -387,6 +404,11 @@ void Scene::render()
 		normalLayer = output.addLayer("normal");
 	}
 
+	if (directLightAOVEnabled)
+	{
+		directLightLayer = output.addLayer("direct_light");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -415,6 +437,7 @@ void Scene::render()
 				Vector3D<float> refractionAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> normalAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> directLightAOV(0.0f, 0.0f, 0.0f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
@@ -429,7 +452,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV);
 				}
 
 				color /= (float)numberOfSamples;
@@ -439,6 +462,7 @@ void Scene::render()
 				refractionAOV /= (float)numberOfSamples;
 				subsurfaceScatteringAOV /= (float)numberOfSamples;
 				normalAOV /= (float)numberOfSamples;
+				directLightAOV /= (float)numberOfSamples;
 				alpha /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
@@ -487,6 +511,11 @@ void Scene::render()
 				if (normalAOVEnabled)
 				{
 					output.writeLayer(normalLayer, static_cast<size_t>((height - 1 - i) * width + j), normalAOV);
+				}
+
+				if (directLightAOVEnabled)
+				{
+					output.writeLayer(directLightLayer, static_cast<size_t>((height - 1 - i) * width + j), directLightAOV);
 				}
 			}
 		};
