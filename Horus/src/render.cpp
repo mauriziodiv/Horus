@@ -353,7 +353,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		{
 			float dpv = hit.t * (ray.getDirection() * cameraForward);
 			float nearest = std::min(depthAOV->x, dpv);
-			*depthAOV = Vector3D<float>(nearest, nearest, nearest);
+			*depthAOV = Vector3D<float>(nearest, 0.0f, 0.0f);
 		}
 
 		auto& shader = closestHit->getShader();

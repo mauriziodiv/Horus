@@ -460,7 +460,7 @@ void Scene::render()
 				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> normalAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> directLightAOV(0.0f, 0.0f, 0.0f);
-				Vector3D<float> depthAOV(1.0e30f, 1.0e30f, 1.0e30f);
+				Vector3D<float> depthAOV(1.0e30f, 0.0f, 0.0f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
