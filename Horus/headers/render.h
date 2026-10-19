@@ -12,7 +12,7 @@ class Integrator
 		Integrator(std::vector<LightObject*>& lights) : lights(lights) { };
 		void addAreaLights(std::vector<AreaLight*>& al);
 		void addMeshLights(std::vector<MeshLight*>& ml);
-		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true, bool isPrimaty = false, float bsdfPdf = 0.0f, Vector3D<float>* diffuseAOV = nullptr, Vector3D<float>* specularAOV = nullptr, Vector3D<float>* emissionAOV = nullptr, Vector3D<float>* refractionAOV = nullptr, Vector3D<float>* subsurfaceScatteringAOV = nullptr, float* alpha = nullptr, Vector3D<float>* normalAOV = nullptr, Vector3D<float>* directLightAOV = nullptr);
+		Vector3D<float> rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission = true, bool isPrimaty = false, float bsdfPdf = 0.0f, Vector3D<float>* diffuseAOV = nullptr, Vector3D<float>* specularAOV = nullptr, Vector3D<float>* emissionAOV = nullptr, Vector3D<float>* refractionAOV = nullptr, Vector3D<float>* subsurfaceScatteringAOV = nullptr, float* alpha = nullptr, Vector3D<float>* normalAOV = nullptr, Vector3D<float>* directLightAOV = nullptr, Vector3D<float>* depthAOV = nullptr);
 
 		std::vector<LightObject*>& getLights() { return lights; }
 		std::vector<AreaLight*>& getAreaLights() { return areaLights; }
@@ -22,11 +22,15 @@ class Integrator
 
 		Vector3D<float> toLocal(Vector3D<float> vec, Vector3D<float> refVector);
 
+		void setCameraForward(const Vector3D<float>& forward) { cameraForward = forward; }
+
 	private:
 
 		std::vector<LightObject*> lights;
 		std::vector<AreaLight*> areaLights;
 		std::vector<MeshLight*> meshLights;
+
+		Vector3D<float> cameraForward;
 
 		UnitRandom unitRandom;
 

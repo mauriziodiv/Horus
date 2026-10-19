@@ -324,6 +324,23 @@ bool Scene::setDirectLightAOV(const std::string_view d)
 	return false;
 }
 
+bool Scene::setDepthAOV(const std::string_view d)
+{
+	if (d.empty())
+	{
+		return false;
+	}
+
+	std::string_view depth_token = (d.front() == '-') ? d.substr(1) : d;
+
+	if (depth_token == "dp")
+	{
+		std::cout << "Depth AOV is enabled!" << std::endl;
+		depthAOVEnabled = true;
+	}
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -409,6 +426,11 @@ void Scene::render()
 		directLightLayer = output.addLayer("direct_light");
 	}
 
+	if (depthAOVEnabled)
+	{
+		depthLayer = output.addLayer("Z");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -438,6 +460,7 @@ void Scene::render()
 				Vector3D<float> subsurfaceScatteringAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> normalAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> directLightAOV(0.0f, 0.0f, 0.0f);
+				Vector3D<float> depthAOV(1.0e30f, 1.0e30f, 1.0e30f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
@@ -452,7 +475,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV, &depthAOV);
 				}
 
 				color /= (float)numberOfSamples;
@@ -517,6 +540,11 @@ void Scene::render()
 				{
 					output.writeLayer(directLightLayer, static_cast<size_t>((height - 1 - i) * width + j), directLightAOV);
 				}
+
+				if (depthAOVEnabled)
+				{
+					output.writeLayer(depthLayer, static_cast<size_t>((height - 1 - i) * width + j), depthAOV);
+				}
 			}
 		};
 
@@ -538,6 +566,7 @@ void Scene::render()
 				Integrator integrator(lights);
 				integrator.addAreaLights(areaLights);
 				integrator.addMeshLights(meshLights);
+				integrator.setCameraForward(camera->getForward());
 
 				int i;
 

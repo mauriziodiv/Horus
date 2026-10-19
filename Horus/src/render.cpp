@@ -332,7 +332,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV, Vector3D<float>* depthAOV)
 {
 	HitRecord hit;
 
@@ -347,6 +347,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		if (isPrimary && alpha)
 		{
 			*alpha += 1.0f;
+		}
+
+		if (isPrimary && depthAOV)
+		{
+			float dpv = hit.t * (ray.getDirection() * cameraForward);
+			float nearest = std::min(depthAOV->x, dpv);
+			*depthAOV = Vector3D<float>(nearest, nearest, nearest);
 		}
 
 		auto& shader = closestHit->getShader();

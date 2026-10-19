@@ -30,6 +30,7 @@ class Scene {
 		bool setSubsurfaceScatteringAOV(const std::string_view sss);
 		bool setNormalAOV(const std::string_view n);
 		bool setDirectLightAOV(const std::string_view d);
+		bool setDepthAOV(const std::string_view d);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -61,6 +62,7 @@ class Scene {
 		size_t subsurfaceScatteringLayer = 0;
 		size_t normalLayer = 0;
 		size_t directLightLayer = 0;
+		size_t depthLayer = 0;
 
 		std::string_view filePathWrite;
 
@@ -80,4 +82,5 @@ class Scene {
 		bool subsurfaceScatteringAOVEnabled = false;
 		bool normalAOVEnabled = false;
 		bool directLightAOVEnabled = false;
+		bool depthAOVEnabled = false;
 };

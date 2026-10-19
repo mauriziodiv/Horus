@@ -735,7 +735,7 @@ class CameraObject : public SceneObject {
 
 			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
 
-			Vector3D<float> forward = R * Vector3D<float>(0.0f, 0.0f, -1.0f);
+			forward = R * Vector3D<float>(0.0f, 0.0f, -1.0f);
 			Vector3D<float> right = R * Vector3D<float>(1.0f, 0.0f, 0.0f);
 			Vector3D<float> up = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
 
@@ -743,6 +743,8 @@ class CameraObject : public SceneObject {
 			horizontal = right * window_width;
 			vertical = up * window_height;
 		}
+
+		Vector3D<float> getForward() { return forward; }
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -766,6 +768,9 @@ class CameraObject : public SceneObject {
 
 		Vector3D<float> lower_left_corner;
 		Vector3D<float> horizontal;
+
+		Vector3D<float> forward;
+
 		Vector3D<float> vertical;
 
 		float sensorHeight = 24.0f;
