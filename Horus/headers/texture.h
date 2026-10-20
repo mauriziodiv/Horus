@@ -5,6 +5,9 @@
 #include "vec_math.h"
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
+#include <ImfInputFile.h>
+#include <ImfFrameBuffer.h>
+#include <ImfChannelList.h>
 #include <ImathBox.h>
 #include <filesystem>
 

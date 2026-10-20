@@ -1,8 +1,10 @@
 #include "texture.h"
 
-static bool readRgba(Imf::RgbaInputFile& file, Imf::Array2D<Imf::Rgba>& out, int& width, int& height)
+static bool readFloat(const std::string& filePath, std::vector<Vector3D<float>>& out, int& width, int& height)
 {
-	Imath::Box2i dw = file.dataWindow();
+	Imf::InputFile file(filePath.c_str());
+
+	Imath::Box2i dw = file.header().dataWindow();
 
 	width = dw.max.x - dw.min.x + 1;
 	height = dw.max.y - dw.min.y + 1;
@@ -12,10 +14,38 @@ static bool readRgba(Imf::RgbaInputFile& file, Imf::Array2D<Imf::Rgba>& out, int
 		return false;
 	}
 
-	out.resizeErase(height, width);
-	
-	file.setFrameBuffer(&out[0][0] - dw.min.x - dw.min.y * width, 1, width);
+	// colour maps have R,G,B - single-channel maps (roughness...) only have Y
+	bool isRgb = file.header().channels().findChannel("R") != nullptr;
+
+	size_t count = static_cast<size_t>(width) * static_cast<size_t>(height);
+
+	std::vector<float> r(count), g(count), b(count);
+
+	size_t xStride = sizeof(float);
+	size_t yStride = sizeof(float) * width;
+
+	Imf::FrameBuffer frameBuffer;
+
+	if (isRgb)
+	{
+		frameBuffer.insert("R", Imf::Slice(Imf::FLOAT, (char*)(r.data() - dw.min.x - dw.min.y * width), xStride, yStride));
+		frameBuffer.insert("G", Imf::Slice(Imf::FLOAT, (char*)(g.data() - dw.min.x - dw.min.y * width), xStride, yStride));
+		frameBuffer.insert("B", Imf::Slice(Imf::FLOAT, (char*)(b.data() - dw.min.x - dw.min.y * width), xStride, yStride));
+	}
+	else
+	{
+		frameBuffer.insert("Y", Imf::Slice(Imf::FLOAT, (char*)(r.data() - dw.min.x - dw.min.y * width), xStride, yStride));
+	}
+
+	file.setFrameBuffer(frameBuffer);
 	file.readPixels(dw.min.y, dw.max.y);
+
+	out.resize(count);
+
+	for (size_t i = 0; i < count; i++)
+	{
+		out[i] = isRgb ? Vector3D<float>(r[i], g[i], b[i]) : Vector3D<float>(r[i], r[i], r[i]);
+	}
 
 	return true;
 }
@@ -24,27 +54,13 @@ bool Texture::load(const std::string& filePath)
 {
 	try
 	{
-		Imf::RgbaInputFile texture(filePath.c_str());
+		std::vector<Vector3D<float>> data;
 
-		Imf::Array2D<Imf::Rgba> halfPixel;
-
-		if (!readRgba(texture, halfPixel, width, height))
+		if (!readFloat(filePath, data, width, height))
 		{
 			return false;
 		}
 
-		//pixels.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
-		std::vector<Vector3D<float>> data(static_cast<size_t>(width) * static_cast<size_t>(height));
-
-		for (int i = 0; i < height; i++)
-		{
-			for (int j = 0; j < width; j++)
-			{
-				const Imf::Rgba& p = halfPixel[i][j];
-				data[(i * width) + j] = Vector3D<float>(p.r, p.g, p.b);
-			}
-		}
-		
 		pixels = std::make_shared<const std::vector<Vector3D<float>>>(std::move(data));
 
 		loaded = true;
