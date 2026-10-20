@@ -5,7 +5,7 @@ Ray::Ray(Vector3D<float> origin, Vector3D<float> direction) : origin(origin), di
 
 }
 
-Vector3D<float> Ray::getPointat(float t)
+Vector3D<float> Ray::getPointAt(float t)
 {
 	return Vector3D<float>(origin.x + (t * direction.x), origin.y + (t * direction.y), origin.z + (t * direction.z));
 }

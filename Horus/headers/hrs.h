@@ -398,7 +398,7 @@ class SphereObject : public GeometryObject {
 			if (t1 > tMin && t1 < tMax)
 			{
 				hit.front = true;
-				hit.hitPoint = ray.getPointat(t1);
+				hit.hitPoint = ray.getPointAt(t1);
 				hit.t = t1;
 				return true;
 			}
@@ -406,7 +406,7 @@ class SphereObject : public GeometryObject {
 			if (t2 > tMin && t2 < tMax)
 			{
 				hit.front = false;
-				hit.hitPoint = ray.getPointat(t2);
+				hit.hitPoint = ray.getPointAt(t2);
 				hit.t = t2;
 
 				return true;
@@ -488,7 +488,7 @@ class PlaneObject : public GeometryObject {
 
 			if (t > 0 && t > tMin && t < tMax)
 			{
-				Vector3D<float> hitPoint = ray.getPointat(t);
+				Vector3D<float> hitPoint = ray.getPointAt(t);
 
 				Vector3D<float> d = hitPoint - position;
 
@@ -749,7 +749,7 @@ class CameraObject : public SceneObject {
 		float getWidth() { return width; }
 		float getHeight() { return height; }
 
-		Ray genRay(float u, float v); 
+		Ray genRay(float u, float v);
 		
 
 		Vector3D<float> lookAt;

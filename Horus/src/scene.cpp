@@ -341,6 +341,24 @@ bool Scene::setDepthAOV(const std::string_view d)
 	return false;
 }
 
+bool Scene::setPositionAOV(const std::string_view p)
+{
+	if (p.empty())
+	{
+		return false;
+	}
+
+	std::string_view position_token = (p.front() == '-') ? p.substr(1) : p;
+
+	if (position_token == "pos")
+	{
+		std::cout << "Position AOV is enabled!" << std::endl;
+		positionAOVEnabled = true;
+	}
+	
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -431,6 +449,11 @@ void Scene::render()
 		depthLayer = output.addLayer("Z");
 	}
 
+	if (positionAOVEnabled)
+	{
+		positionLayer = output.addLayer("P");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -461,6 +484,7 @@ void Scene::render()
 				Vector3D<float> normalAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> directLightAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> depthAOV(1.0e30f, 0.0f, 0.0f);
+				Vector3D<float> positionAOV(1.0e30f, 1.0e30f, 1.0e30f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
@@ -475,7 +499,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV, &depthAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV, &depthAOV, &positionAOV);
 				}
 
 				color /= (float)numberOfSamples;
@@ -544,6 +568,11 @@ void Scene::render()
 				if (depthAOVEnabled)
 				{
 					output.writeLayer(depthLayer, static_cast<size_t>((height - 1 - i) * width + j), depthAOV);
+				}
+
+				if (positionAOVEnabled)
+				{
+					output.writeLayer(positionLayer, static_cast<size_t>((height - 1 - i) * width + j), positionAOV);
 				}
 			}
 		};

@@ -157,7 +157,7 @@ bool Triangle::rayIntersection(Ray& ray, float tMin, float tMax, HitRecord& hit)
 	}
 
 	hit.t = t;
-	hit.hitPoint = ray.getPointat(t);
+	hit.hitPoint = ray.getPointAt(t);
 	hit.front = (det > 0);
 	hit.back = (det < 0);
 	hit.b0 = b0;

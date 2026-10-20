@@ -95,7 +95,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 		if (tFlight >= tBoundary)
 		{
-			Vector3D<float> exitPoint = currentRay.getPointat(tBoundary);
+			Vector3D<float> exitPoint = currentRay.getPointAt(tBoundary);
 			Vector3D<float> exitDir = currentRay.getDirection();
 
 			Vector3D<float> boundaryWeight;
@@ -166,7 +166,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 			return radiance + (subsurfaceColor % rayPath(exitRay, bvh, nBounces - 1, !scattered));
 		}
 
-		Vector3D<float> scatterPoint = currentRay.getPointat(tFlight);
+		Vector3D<float> scatterPoint = currentRay.getPointAt(tFlight);
 		Vector3D<float> currentDir = currentRay.getDirection();
 
 		scattered = true;
@@ -201,7 +201,7 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 			if (boundaryHit != nullptr)
 			{
 				float tBoundaryHit = toBoundaryRecord.t;
-				Vector3D<float> pointBoundaryHit = toBoundary.getPointat(tBoundaryHit);
+				Vector3D<float> pointBoundaryHit = toBoundary.getPointAt(tBoundaryHit);
 				Vector3D<float> Tr;// = std::exp(-sigmaTHero * tBoundaryHit);
 
 				Tr.x = std::exp(-sigmaTV.x * tBoundaryHit);
@@ -332,7 +332,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV, Vector3D<float>* depthAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV, Vector3D<float>* depthAOV, Vector3D<float>* positionAOV)
 {
 	HitRecord hit;
 
@@ -356,6 +356,15 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			*depthAOV = Vector3D<float>(nearest, 0.0f, 0.0f);
 		}
 
+		if (isPrimary && positionAOV)
+		{
+			Vector3D<float> distanceFromCameraStored = *positionAOV - ray.getOrigin();
+			if ((hit.t * hit.t) * (ray.getDirection() * ray.getDirection()) < (distanceFromCameraStored * distanceFromCameraStored))
+			{
+				*positionAOV = ray.getPointAt(hit.t);
+			}
+		}
+
 		auto& shader = closestHit->getShader();
 
 		if (std::holds_alternative<Constant>(shader))
@@ -377,7 +386,7 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 		}
 		else
 		{
-			Vector3D<float> hitPoint = ray.getPointat(hit.t);
+			Vector3D<float> hitPoint = ray.getPointAt(hit.t);
 			Vector3D<float> geometricNormal = closestHit->computeNormal(hit);
 			Point<float> uv = closestHit->computeUV(hit);
 
