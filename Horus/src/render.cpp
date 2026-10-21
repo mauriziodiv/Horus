@@ -1,4 +1,5 @@
 #include "render.h"
+#include <algorithm>
 
 // Max brightness a single bounce (or SSS walk) may return - removes fireflies (slightly biased)
 static const float maxIndirect = 10.0f;
@@ -332,7 +333,7 @@ void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
-Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV, Vector3D<float>* depthAOV, Vector3D<float>* positionAOV)
+Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool includeEmission, bool isPrimary, float bsdfPdf, Vector3D<float>* diffuseAOV, Vector3D<float>* specularAOV, Vector3D<float>* emissionAOV, Vector3D<float>* refractionAOV, Vector3D<float>* subsurfaceScatteringAOV, float* alpha, Vector3D<float>* normalAOV, Vector3D<float>* directLightAOV, Vector3D<float>* depthAOV, Vector3D<float>* positionAOV, Vector3D<float>* indirectAOV, Vector3D<float>* lightHitOut)
 {
 	HitRecord hit;
 
@@ -582,6 +583,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					{
 						*emissionAOV += emission;
 					}
+
+					if (lightHitOut)
+					{
+						*lightHitOut += emission;
+					}
 				}
 
 				if (closestHit->getMeshLight() != nullptr)
@@ -605,6 +611,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					if (emissionAOV)
 					{
 						*emissionAOV += meshLightContribution;
+					}
+
+					if (lightHitOut)
+					{
+						*lightHitOut += meshLightContribution;
 					}
 				}
 			}
@@ -822,7 +833,17 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 				Ray newRay(hitPoint + (geometricNormal * epsilon), newDir);
 
-				Vector3D<float> indirectContribution = ((tint % clampSample(rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf), maxIndirect)) + specularDirect) * diffuseGain * (1.0f - refraction_gain);
+				Vector3D<float> lightHit(0.0f, 0.0f, 0.0f);
+				Vector3D<float> bounceRadiance = rayPath(newRay, bvh, nBounces - 1, passEmission, false, bsdfPdf, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &lightHit);
+
+				// same factor clampSample would apply, so the light-hit share is clamped consistently
+				float m = std::max({ bounceRadiance.x, bounceRadiance.y, bounceRadiance.z });
+				float clampScale = (m > maxIndirect) ? maxIndirect / m : 1.0f;
+				float weight = diffuseGain * (1.0f - refraction_gain);
+
+				Vector3D<float> bounceContribution = (tint % (bounceRadiance * clampScale)) * weight;
+				Vector3D<float> lightHitContribution = (tint % (lightHit * clampScale)) * weight;
+				Vector3D<float> indirectContribution = bounceContribution + specularDirect * weight;
 				color += indirectContribution;
 
 				if (diffuseAOV && isDiffuseBranch)
@@ -833,6 +854,16 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				if (specularAOV && !isDiffuseBranch)
 				{
 					*specularAOV += indirectContribution;
+				}
+
+				if (directLightAOV)
+				{
+					*directLightAOV += lightHitContribution;
+				}
+
+				if (indirectAOV)
+				{
+					*indirectAOV += bounceContribution - lightHitContribution;
 				}
 			}
 		}
@@ -848,7 +879,13 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 			{
 				if (light->getLightType() == LightType::DOME && (light->getVisibility() || !isPrimary))
 				{
-					color += light->getRadiance(ray.getDirection());
+					Vector3D<float> domeRadiance = light->getRadiance(ray.getDirection());
+					color += domeRadiance;
+
+					if (lightHitOut)
+					{
+						*lightHitOut += domeRadiance;
+					}
 
 					domeVisible = true;
 				}

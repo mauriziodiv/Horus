@@ -40,6 +40,7 @@ void setAOVs(Scene& scene, std::string s)
 	scene.setDirectLightAOV(s);
 	scene.setDepthAOV(s);
 	scene.setPositionAOV(s);
+	scene.setIndirectAOV(s);
 };
 
 // The main function of the program.
@@ -174,6 +175,11 @@ int main(int argc, char* argv[])
 	if (inputDescription.size() > 14 && !inputDescription[14].empty())
 	{
 		setAOVs(scene, inputDescription[14]);
+	}
+
+	if (inputDescription.size() > 15 && !inputDescription[15].empty())
+	{
+		setAOVs(scene, inputDescription[15]);
 	}
 
 	// Get scene from scene objects

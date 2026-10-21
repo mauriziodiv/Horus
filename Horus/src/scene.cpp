@@ -359,6 +359,24 @@ bool Scene::setPositionAOV(const std::string_view p)
 	return false;
 }
 
+bool Scene::setIndirectAOV(const std::string_view i)
+{
+	if (i.empty())
+	{
+		return false;
+	}
+
+	std::string_view indirect_token = (i.front() == '-') ? i.substr(1) : i;
+
+	if (indirect_token == "il")
+	{
+		std::cout << "Indirect AOV is enabled!" << std::endl;
+		indirectAOVEnabled = true;
+	}
+
+	return false;
+}
+
 // Sets the file path for writing the rendered output.
 bool Scene::setFilePathWrite(const std::string_view& path)
 {
@@ -454,6 +472,11 @@ void Scene::render()
 		positionLayer = output.addLayer("P");
 	}
 
+	if (indirectAOVEnabled)
+	{
+		indirectLayer = output.addLayer("indirect");
+	}
+
 	camera->setWindow(getWidth(), getHeight());
 	
 	std::cout << "camera position : " << camera->getPosition().x << " " << camera->getPosition().y << " " << camera->getPosition().z << std::endl;
@@ -485,6 +508,7 @@ void Scene::render()
 				Vector3D<float> directLightAOV(0.0f, 0.0f, 0.0f);
 				Vector3D<float> depthAOV(1.0e30f, 0.0f, 0.0f);
 				Vector3D<float> positionAOV(1.0e30f, 1.0e30f, 1.0e30f);
+				Vector3D<float> indirectAOV(0.0f, 0.0f, 0.0f);
 				float alpha = 0.0f;
 
 				Ray ray(camera->genRay(u, v));
@@ -499,7 +523,7 @@ void Scene::render()
 
 					ray.setDirection(Vector3D<float>(x, y, z));
 
-					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV, &depthAOV, &positionAOV);
+					color += integrator.rayPath(ray, bvh, bounces, true, true, 0.0f, &diffuseAOV, &specularAOV, &emissionAOV, &refractionAOV, &subsurfaceScatteringAOV, &alpha, &normalAOV, &directLightAOV, &depthAOV, &positionAOV, &indirectAOV);
 				}
 
 				color /= (float)numberOfSamples;
@@ -510,6 +534,7 @@ void Scene::render()
 				subsurfaceScatteringAOV /= (float)numberOfSamples;
 				normalAOV /= (float)numberOfSamples;
 				directLightAOV /= (float)numberOfSamples;
+				indirectAOV /= (float)numberOfSamples;
 				alpha /= (float)numberOfSamples;
 
 				if (gammaCorrectionSet)
@@ -573,6 +598,11 @@ void Scene::render()
 				if (positionAOVEnabled)
 				{
 					output.writeLayer(positionLayer, static_cast<size_t>((height - 1 - i) * width + j), positionAOV);
+				}
+
+				if (indirectAOVEnabled)
+				{
+					output.writeLayer(indirectLayer, static_cast<size_t>((height - 1 - i) * width + j), indirectAOV);
 				}
 			}
 		};

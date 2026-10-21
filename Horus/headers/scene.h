@@ -32,6 +32,7 @@ class Scene {
 		bool setDirectLightAOV(const std::string_view d);
 		bool setDepthAOV(const std::string_view d);
 		bool setPositionAOV(const std::string_view p);
+		bool setIndirectAOV(const std::string_view i);
 
 		float getWidth() { return width; }
 		float getHeight() { return height; }
@@ -65,6 +66,7 @@ class Scene {
 		size_t directLightLayer = 0;
 		size_t depthLayer = 0;
 		size_t positionLayer = 0;
+		size_t indirectLayer = 0;
 
 		std::string_view filePathWrite;
 
@@ -86,4 +88,5 @@ class Scene {
 		bool directLightAOVEnabled = false;
 		bool depthAOVEnabled = false;
 		bool positionAOVEnabled = false;
+		bool indirectAOVEnabled = false;
 };
