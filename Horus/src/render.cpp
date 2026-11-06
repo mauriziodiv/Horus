@@ -180,17 +180,29 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 		AreaLight* areaLight = nullptr;
 		MeshLight* meshLight = nullptr;
+		InfiniteLight* infiniteLight = nullptr;
 
 		Vector3D<float> lightPos;
+		Vector3D<float> lightDir;
 		Vector3D<float> lightNormal;
 		Vector3D<float> lightEmission;
 		float pdfArea = 0.0f;
 		size_t lightObjectCount = 0;
 
-		if (sampleLightSource(areaLight, meshLight, lightPos, lightNormal, lightEmission, pdfArea, lightObjectCount))
+		if (sampleLightSource(areaLight, meshLight, infiniteLight, lightPos, lightDir, lightNormal, lightEmission, pdfArea, lightObjectCount))
 		{
-			Vector3D<float> lightDir = lightPos - scatterPoint;
-			float distance = lightDir.getLength();
+			float distance = 0.0f;
+
+			if (infiniteLight)
+			{
+				lightDir = -lightDir;
+			}
+			else
+			{
+				lightDir = lightPos - scatterPoint;
+			}
+
+			distance = lightDir.getLength();
 			lightDir.normalize();
 
 			Ray toBoundary(scatterPoint, lightDir);
@@ -211,10 +223,10 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 
 				float epsilon = 0.0001f;
 
-				if (tBoundaryHit < distance)
+				if (infiniteLight || tBoundaryHit < distance)
 				{
 					Ray shadowRay(pointBoundaryHit + (lightDir * epsilon), lightDir);
-					shadowRay.setTMax((distance - tBoundaryHit) - epsilon);
+					if (!infiniteLight) { shadowRay.setTMax((distance - tBoundaryHit) - epsilon); }
 
 					HitRecord shadowHit;
 
@@ -224,12 +236,21 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 					{
 						float cosLight = lightNormal * -lightDir;
 
-						if (cosLight > 0.0f)
+						if (infiniteLight || cosLight > 0.0f)
 						{
 							float cosTetha = currentDir * lightDir;
 							float phase = Sampler::computePhase(g, cosTetha);
 
-							float geometry = cosLight / (distance * distance);
+							float geometry = 0.0f;
+
+							if (infiniteLight)
+							{
+								geometry = 1.0f;
+							}
+							else
+							{
+								geometry = cosLight / (distance * distance);
+							}
 
 							Vector3D<float> contribution = (subsurfaceColor % channelWeight % lightEmission % Tr) * (phase * geometry / pdfArea);
 
@@ -269,12 +290,13 @@ Vector3D<float> Integrator::subsurfaceWalk(Ray& ray, BVH& bvh, const Medium& med
 }
 
 // Samples a light source (either an area light or a mesh light) and provides its position, normal, emission, and PDF for area sampling.
-bool Integrator::sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight, Vector3D<float>& lightPos, Vector3D<float>& lightNormal, Vector3D<float>& lightEmission, float& pdfArea, size_t& lightObjectCount)
+bool Integrator::sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight, InfiniteLight*& infiniteLight, Vector3D<float>& lightPos, Vector3D<float>& lightDir, Vector3D<float>& lightNormal, Vector3D<float>& lightEmission, float& pdfArea, size_t& lightObjectCount)
 {
 	areaLight = nullptr;
 	meshLight = nullptr;
-	
-	lightObjectCount = areaLights.size() + meshLights.size();
+	infiniteLight = nullptr;
+
+	lightObjectCount = areaLights.size() + infiniteLights.size() + meshLights.size();
 
 	if (lightObjectCount == 0) { return false; }
 
@@ -293,9 +315,17 @@ bool Integrator::sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight,
 		lightEmission = areaLight->getColor() * areaLight->getIntensity() * std::pow(2.0f, areaLight->getExposure());
 		pdfArea = 1.0f / (areaLight->getWidth() * areaLight->getHeight());
 	}
+	else if (rndLightIndex < areaLights.size() + infiniteLights.size() && rndLightIndex >= areaLights.size())
+	{
+		infiniteLight = infiniteLights[static_cast<int>(rndLightIndex) - areaLights.size()];
+
+		lightDir = infiniteLight->getDirection();
+		lightEmission = infiniteLight->getColor() * infiniteLight->getIntensity() * std::pow(2.0f, infiniteLight->getExposure());
+		pdfArea = 1.0f; // Infinite lights are treated as directional, so the PDF is uniform over the sphere
+	}
 	else
 	{
-		meshLight = meshLights[static_cast<int>(rndLightIndex - areaLights.size())];
+		meshLight = meshLights[static_cast<int>(rndLightIndex - areaLights.size() - infiniteLights.size())];
 
 		float rndTriangle = unitRandom.Generate();
 		float rU = unitRandom.Generate();
@@ -315,7 +345,7 @@ bool Integrator::sampleLightSource(AreaLight*& areaLight, MeshLight*& meshLight,
 // including the 1/N chance sampleLightSource() had of picking this light.
 float Integrator::lightPdfSolidAngle(float pdfArea, float distance, float cosLight)
 {
-	size_t lightCount = areaLights.size() + meshLights.size();
+	size_t lightCount = areaLights.size() + infiniteLights.size() + meshLights.size();
 
 	if (cosLight <= 0.0f || lightCount == 0) { return 0.0f; }
 
@@ -330,6 +360,11 @@ void Integrator::addAreaLights(std::vector<AreaLight*>& al)
 void Integrator::addMeshLights(std::vector<MeshLight*>& ml)
 {
 	meshLights = ml;
+}
+
+void Integrator::addInfiniteLights(std::vector<InfiniteLight*>& il)
+{
+	infiniteLights = il;
 }
 
 // Traces the path of a ray through the scene, calculating the color contribution at each intersection point.
@@ -452,14 +487,16 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 			bool isDiffuseBranch = unitRandom.Generate() >= (F * specular);
 
-			if (isDiffuseBranch && (!areaLights.empty() || !meshLights.empty()))
+			if (isDiffuseBranch && (!areaLights.empty() || !meshLights.empty() || !infiniteLights.empty()))
 			{
 				AreaLight* areaLight = nullptr;
 				MeshLight* meshLight = nullptr;
+				InfiniteLight* infiniteLight = nullptr;
 
 				size_t lightObjectsCount = 0;
 
 				Vector3D<float> lightPos = Vector3D<float>(0.0f, 0.0f, 0.0f);
+				Vector3D<float> lightDir = Vector3D<float>(0.0f, 0.0f, 0.0f);
 				Vector3D<float> lightNormal = Vector3D<float>(0.0f, 0.0f, 0.0f);
 				Vector3D<float> lightEmission = Vector3D<float>(0.0f, 0.0f, 0.0f);
 				float pdfArea = 0.0f;
@@ -468,15 +505,26 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 				float epsilon = 0.001f;
 				float distance = 0.0f;
 
-				if (sampleLightSource(areaLight, meshLight, lightPos, lightNormal, lightEmission, pdfArea, lightObjectsCount))
+				if (sampleLightSource(areaLight, meshLight, infiniteLight, lightPos, lightDir, lightNormal, lightEmission, pdfArea, lightObjectsCount))
 				{
-					Vector3D<float> shadowRayDir = lightPos - hitPoint;
-					shadowRay.setOrigin(hitPoint + (geometricNormal * epsilon));
+					Vector3D<float> shadowRayDir;
 
-					distance = shadowRayDir.getLength();
+					if (infiniteLight)
+					{
+						shadowRayDir = -lightDir;
+					}
+					else
+					{
+						shadowRayDir = lightPos - hitPoint;
+						distance = shadowRayDir.getLength();
+					}
+
 					shadowRayDir.normalize();
+					
+					shadowRay.setOrigin(hitPoint + (geometricNormal * epsilon));
 					shadowRay.setDirection(shadowRayDir);
-					shadowRay.setTMax(distance - epsilon);
+
+					if (!infiniteLight) { shadowRay.setTMax(distance - epsilon); }
 
 					HitRecord shadowHit;
 
@@ -489,12 +537,18 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 
 						if (cos_surface >= 0 && cos_light >= 0)
 						{
-							float angleContribution = (cos_surface * cos_light) / (distance * distance);
+							float angleContribution = cos_surface;
+							float misWeight = 1.0f;
+							
+							if (!infiniteLight)
+							{
+								angleContribution = (cos_surface * cos_light) / (distance * distance);
 
-							// MIS: the cosine-sampled diffuse bounce could have found this light too
-							float lightPdf = lightPdfSolidAngle(pdfArea, distance, cos_light);
-							float bsdfPdfLight = cos_surface / PI;
-							float misWeight = PowerHeuristic(lightPdf, bsdfPdfLight);
+								// MIS: the cosine-sampled diffuse bounce could have found this light too
+								float lightPdf = lightPdfSolidAngle(pdfArea, distance, cos_light);
+								float bsdfPdfLight = cos_surface / PI;
+								misWeight = PowerHeuristic(lightPdf, bsdfPdfLight);
+							}
 
 							Vector3D<float> rddap = (lightEmission % diffuseColor) * diffuseGain * angleContribution / (pdfArea * PI) * (1.0f - refraction_gain) * misWeight;
 							lightsContribution = rddap * lightObjectsCount;
@@ -758,21 +812,34 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 					{
 						// --- Light sampling for the specular lobe (MIS partner of the VNDF sample) ---
 						// Skipped for a near-mirror: a delta lobe can't be hit by a light sample.
-						if (alpha >= 1e-3f && (!areaLights.empty() || !meshLights.empty()))
+						if (alpha >= 1e-3f && (!areaLights.empty() || !meshLights.empty() || !infiniteLights.empty()))
 						{
 							AreaLight* areaLight = nullptr;
 							MeshLight* meshLight = nullptr;
+							InfiniteLight* infiniteLight = nullptr;
 							size_t lightCount = 0;
 
 							Vector3D<float> lightPos(0.0f, 0.0f, 0.0f);
+							Vector3D<float> lightDir(0.0f, 0.0f, 0.0f);
 							Vector3D<float> lightNormal(0.0f, 0.0f, 0.0f);
 							Vector3D<float> lightEmission(0.0f, 0.0f, 0.0f);
 							float pdfArea = 0.0f;
 
-							if (sampleLightSource(areaLight, meshLight, lightPos, lightNormal, lightEmission, pdfArea, lightCount))
+							if (sampleLightSource(areaLight, meshLight, infiniteLight, lightPos, lightDir, lightNormal, lightEmission, pdfArea, lightCount))
 							{
-								Vector3D<float> toLight = lightPos - hitPoint;
-								float distance = toLight.getLength();
+								Vector3D<float> toLight;
+								float distance = 1.0f;
+
+								if (infiniteLight)
+								{
+									toLight = -lightDir;
+								}
+								else
+								{
+									toLight = lightPos - hitPoint;
+									distance = toLight.getLength();
+								}
+
 								toLight.normalize();
 
 								Vector3D<float> wiLight = toLocal(toLight, shadingNormal);
@@ -781,10 +848,11 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 								Vector3D<float> halfSum = woLocal + wiLight;
 								float halfLen = halfSum.getLength();
 
-								if (wiLight.z > 0.0f && cosLight > 0.0f && halfLen > 1e-4f)
+								if (wiLight.z > 0.0f && (infiniteLight || cosLight > 0.0f) && halfLen > 1e-4f)
 								{
 									Ray shadowRay(hitPoint + (geometricNormal * epsilon), toLight);
-									shadowRay.setTMax(distance - epsilon);
+
+									if (!infiniteLight) { shadowRay.setTMax(distance - epsilon); }
 
 									HitRecord shadowHit;
 									GeometryObject* blocker = bvh.traversal(shadowRay, shadowRay.getTMin(), shadowRay.getTMax(), shadowHit);
@@ -796,10 +864,17 @@ Vector3D<float> Integrator::rayPath(Ray& ray, BVH& bvh, int nBounces, bool inclu
 										// f * cos(wi) without F*specular, which the branch choice already paid for
 										float fCos = (GGXD(wmLight.z, alpha) * SmithG2(woLocal.z, wiLight.z, alpha)) / (4.0f * woLocal.z);
 
-										float lightPdf = lightPdfSolidAngle(pdfArea, distance, cosLight);
-										float bsdfPdfLight = GGXReflectionPdf(woLocal.z, wmLight.z, alpha);
+										if (infiniteLight)
+										{
+											specularDirect = lightEmission * (fCos * static_cast<float>(lightCount));
+										}
+										else
+										{
+											float lightPdf = lightPdfSolidAngle(pdfArea, distance, cosLight);
+											float bsdfPdfLight = GGXReflectionPdf(woLocal.z, wmLight.z, alpha);
 
-										specularDirect = lightEmission * (fCos * PowerHeuristic(lightPdf, bsdfPdfLight) / lightPdf);
+											specularDirect = lightEmission * (fCos * PowerHeuristic(lightPdf, bsdfPdfLight) / lightPdf);
+										}
 									}
 
 									if (directLightAOV)

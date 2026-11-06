@@ -181,6 +181,7 @@ enum class ParameterType {
 	SHADER,
 	GEO,
 	EXPOSURE,
+	DIRECTION,
 	VISIBILITY,
 	FOCAL_LENGTH
 };
@@ -203,7 +204,8 @@ enum class GeometryType {
 
 enum class LightType {
 	POINT,
-	DOME
+	DOME,
+	INFINITE
 };
 
 enum class CameraType {
@@ -563,7 +565,7 @@ class AreaLight : public PlaneObject
 class LightObject : public SceneObject {
 	public:
 
-		LightObject(LightType lType) : SceneObject(SceneObjectType::LIGHT), lightType(lType), color(0.0f, 0.0f, 0.0f) {}
+		LightObject(LightType lType) : SceneObject(SceneObjectType::LIGHT), lightType(lType), color(0.0f, 0.0f, 0.0f), exposure(0.0f) {}
 
 		LightType getLightType()
 		{
@@ -578,6 +580,16 @@ class LightObject : public SceneObject {
 		float getSize()
 		{
 			return size;
+		}
+
+		void setDirection(Vector3D<float> dir)
+		{
+			direction = dir;
+		}
+
+		Vector3D<float> getDirection()
+		{
+			return direction;
 		}
 
 		void setIntensity(float i)
@@ -600,6 +612,16 @@ class LightObject : public SceneObject {
 			return color;
 		}
 
+		void setExposure(float exp)
+		{
+			exposure = exp;
+		}
+
+		float getExposure()
+		{
+			return exposure;
+		}
+
 		virtual void printProperties() override
 		{
 			SceneObject::printProperties();
@@ -619,9 +641,29 @@ class LightObject : public SceneObject {
 
 		LightType lightType;
 		Vector3D<float> color;
+		Vector3D<float> direction;
+		float exposure;
 
 	protected:
 		Texture texture;
+};
+
+class InfiniteLight : public LightObject
+{
+	public:
+		InfiniteLight() : LightObject(LightType::INFINITE) {}
+
+		virtual std::string_view getObjectName() override { return name; };
+
+		virtual void printProperties() override
+		{
+			LightObject::printProperties();
+			std::cout << "Type: " << getObjectName() << std::endl;
+		}
+
+	private:
+
+		static constexpr const char name[] = "Infinite Light";
 };
 
 class PointLightObject : public LightObject {

@@ -23,6 +23,7 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"shader", ParameterType::SHADER},
 	{"geo", ParameterType::GEO},
 	{"exposure", ParameterType::EXPOSURE},
+	{"direction", ParameterType::DIRECTION},
 	{"visibility", ParameterType::VISIBILITY},
 	{"focal_length", ParameterType::FOCAL_LENGTH}
 };
@@ -276,6 +277,10 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 						{
 							meshLight->setExposure(std::stof(token));
 						}
+						else if (LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back().get()))
+						{
+							lightObject->setExposure(std::stof(token));
+						}
 					}
 					break;
 
@@ -446,6 +451,7 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 
 				case ParameterType::GEO:
 					tokenSearch(file, '/', token);
+
 					if (!token.empty())
 					{
 						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
@@ -454,6 +460,30 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							geometryObject->loadGeometry(token.c_str());
 						}
 					}
+					break;
+
+				case ParameterType::DIRECTION:
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						std::stringstream s(token);
+
+						float x, y, z;
+						char comma;
+
+						s >> x >> comma >> y >> comma >> z;
+
+						LightObject* lightObject = dynamic_cast<LightObject*>(sceneObjects.back().get());
+
+						if (lightObject)
+						{
+							Vector3D<float> dir(x, y, z);
+							dir.normalize();
+							lightObject->setDirection(dir);
+						}
+					}
+
 					break;
 				}	
 		}
@@ -482,7 +512,8 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 	std::unordered_map<std::string, LightType> LightObjectsMap =
 	{
 		{ "point", LightType::POINT },
-		{ "dome", LightType::DOME }
+		{ "dome", LightType::DOME },
+		{ "infinite", LightType::INFINITE }
 	};
 
 	std::unordered_map<std::string, CameraType> CameraObjectsMap =
@@ -560,6 +591,12 @@ bool SceneBuilder(const std::string& filePath, std::vector<std::unique_ptr<Scene
 					case LightType::DOME:
 						// Create a dome light object
 						sceneObjects.emplace_back(std::make_unique<DomeLightObject>());
+						setObjectParameters(file, token, sceneObjects);
+						break;
+
+					case LightType::INFINITE:
+						// Create an infinite light object
+						sceneObjects.emplace_back(std::make_unique<InfiniteLight>());
 						setObjectParameters(file, token, sceneObjects);
 						break;
 				}

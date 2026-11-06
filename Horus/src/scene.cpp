@@ -109,12 +109,18 @@ bool Scene::lightCheck()
 	lights.clear();
 	areaLights.clear();
 	meshLights.clear();
+	infiniteLights.clear();
 
 	for (const auto& lgts : sceneObjects)
 	{
 		if (lgts->getType() == SceneObjectType::LIGHT)
 		{
 			lights.push_back(static_cast<LightObject*>(lgts.get()));
+
+			if (InfiniteLight* infiniteLight = dynamic_cast<InfiniteLight*>(lgts.get()))
+			{
+				infiniteLights.push_back(infiniteLight);
+			}
 		}
 		else if (AreaLight* areaLight = dynamic_cast<AreaLight*>(lgts.get()))
 		{
@@ -625,6 +631,7 @@ void Scene::render()
 				Integrator integrator(lights);
 				integrator.addAreaLights(areaLights);
 				integrator.addMeshLights(meshLights);
+				integrator.addInfiniteLights(infiniteLights);
 				integrator.setCameraForward(camera->getForward());
 
 				int i;

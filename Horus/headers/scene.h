@@ -50,6 +50,7 @@ class Scene {
 		std::vector<LightObject*> lights;
 		std::vector<AreaLight*> areaLights;
 		std::vector<MeshLight*> meshLights;
+		std::vector<InfiniteLight*> infiniteLights;
 
 		bool cameraCheck();
 		bool geometriesCheck();
