@@ -99,6 +99,8 @@ bool Mesh::loadGeometry(const char* filename)
 
 	if (ext == ".obj")
 	{
+		objPath = filename;
+
 		if (!importObj(filename)) { return false; };
 		if (!getData()) { return false; }
 		//add tranformation
@@ -122,6 +124,46 @@ std::vector<GeometryObject*> Mesh::getTriangles()
 	}
 
 	return RTriangles;
+}
+
+bool Mesh::rebuildTriangles(const std::vector<Vector3D<float>>& newVertices, const std::vector<Point<float>>& newUvs, const std::vector<Vector3D<float>>& newNormals, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices)
+{
+	triangleMesh.nVertices = static_cast<int>(newVertices.size());
+
+	triangleMesh.vertex = newVertices;
+	triangleMesh.vertexUV = newUvs;
+	triangleMesh.vertexNormal = newNormals;
+
+	triangleMesh.vertexIndices.clear();
+	triangleMesh.normalIndices.clear();
+	triangleMesh.textureIndices.clear();
+
+	int offset = 0;
+	const int corners[6] = {0,1,2,0,2,3};
+
+	for (size_t i = 0; i < cornerCounts.size(); i++)
+	{
+		if (cornerCounts[i] != 4) 
+		{ 
+			offset += cornerCounts[i];
+			continue;
+		}
+
+		for (size_t j = 0; j < sizeof(corners) / sizeof(corners[0]); j++)
+		{
+			int pos = offset + corners[j];
+			triangleMesh.vertexIndices.push_back(positionIndices[pos]);
+			triangleMesh.normalIndices.push_back(positionIndices[pos]);
+			triangleMesh.textureIndices.push_back(uvIndices[pos]);
+		}
+
+		offset += cornerCounts[i];
+	}
+
+	triangleMesh.nTriangles = static_cast<int>(triangleMesh.vertexIndices.size() / 3);
+	buildTriangles();
+
+	return true;
 }
 
 void MeshLight::buildCDF()

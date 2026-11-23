@@ -4,6 +4,7 @@
 #include "render.h"
 #include "accelerator.h"
 #include <charconv>
+#include <opensubdiv/far/topologyRefiner.h>
 
 enum class GammaCorrection
 {
@@ -43,6 +44,8 @@ class Scene {
 		bool setFilePathWrite(const std::string_view& path);
 		const std::string_view& getFilePathWrite() { return filePathWrite; }
 
+		bool displacementGeo(Mesh& mesh);
+
 	private:
 		std::vector<std::unique_ptr<SceneObject>> sceneObjects;
 		CameraObject* camera;
@@ -55,6 +58,13 @@ class Scene {
 		bool cameraCheck();
 		bool geometriesCheck();
 		bool lightCheck();
+
+		bool computeVertexNormals(const std::vector<Vector3D<float>>& positions, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, std::vector<Vector3D<float>>& outNormals);
+		bool getCorners(const std::string& objPath, std::vector<int>& cornersCounts, std::vector<int>& positions, std::vector<int>& uvs, int& numberOfVerticesTotal, int& numberOfUvTotal, const std::string& ext);
+		OpenSubdiv::Far::TopologyRefiner* sendOpenSubdiv(int numberOfVertices, const std::vector<int>& cornerCounts, const std::vector<int>& positions, int numberOfUvTotal, const std::vector<int>& uvs, int level);
+		bool linkOpenSubdiv(OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertex, const std::vector<Point<float>>& uvs, std::vector<Vector3D<float>>& outPositions, std::vector<Point<float>>& outUvs, std::vector<int>& outCornerCounts, std::vector<int>& outPositionIndices, std::vector<int>& outUvIndices);
+		bool displace(Surface& surface, std::vector<Vector3D<float>>& displacedVertices, const std::vector<Point<float>>& uvs, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices);
+		bool computeEdgeRate(OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const float& targetPixelSize, const int& maxSubdivision, std::vector<int>& outEdgeRate);
 
 		RenderOutput renderOutput = RenderOutput::PPM;
 		Output output;

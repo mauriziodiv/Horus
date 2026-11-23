@@ -147,7 +147,10 @@ enum class ShaderParameterType {
 	SUBSURFACE_RADIUS,
 	SUBSURFACE_ANISOTROPY,
 	NORMAL_MAP,
-	NORMAL_MAP_GAIN
+	NORMAL_MAP_GAIN,
+	DISPLACEMENT_MAP,
+	DISPLACEMENT_MAP_HEIGHT,
+	DISPLACEMENT_MID_LEVEL
 };
 
 struct HitRecord
@@ -183,7 +186,10 @@ enum class ParameterType {
 	EXPOSURE,
 	DIRECTION,
 	VISIBILITY,
-	FOCAL_LENGTH
+	FOCAL_LENGTH,
+	MAX_SUBDIVISIONS,
+	DISPLACEMENT_BOUND,
+	TARGET_PIXEL_SIZE
 };
 
 extern std::unordered_map<std::string, ParameterType> parameterMap;
@@ -293,6 +299,26 @@ class GeometryObject : public SceneObject {
 		bool getWidthUpdated() { return widthUpdated; }
 		bool getHeightUpdated() { return heightUpdated; }
 
+		void setDisplacement(bool disp) { displacement = disp; }
+		bool hasDisplacement() { return displacement; }
+
+		void setMaxSubdivisions(int maxSubdiv) { maxSubdivisions = maxSubdiv; }
+		int getMaxSubdivisions() { return maxSubdivisions; }
+
+		void setDisplacementBound(float bound) { displacementBound = bound; }
+		float getDisplacementBound() { return displacementBound; }
+
+		void setTargetPixelSize(float tps) {
+			
+			if (tps <= 0.0f)
+			{
+				tps = 4.0f;
+			}
+
+			targetPixelSize = tps; 
+		}
+		float getTargetPixelSize() { return targetPixelSize; }
+
 		bool checkPositionRotationWidthHeightUpdated() { return positionUpdated && rotationUpdated && widthUpdated && heightUpdated; }
 
 		virtual bool getHasVertexUV() { return false; }
@@ -335,6 +361,12 @@ class GeometryObject : public SceneObject {
 		bool heightUpdated = false;
 
 		Morton morton;
+
+		bool displacement = false;
+		int maxSubdivisions = 0;
+		float displacementBound = 0.0f;
+
+		float targetPixelSize = 4.0f;
 };
 
 class SphereObject : public GeometryObject {
@@ -778,8 +810,8 @@ class CameraObject : public SceneObject {
 			Matrix4X4<float> R = Matrix4X4<float>::RotationY(rotation.y * DegreeToRadians) * Matrix4X4<float>::RotationX(rotation.x * DegreeToRadians) * Matrix4X4<float>::RotationZ(rotation.z * DegreeToRadians);
 
 			forward = R * Vector3D<float>(0.0f, 0.0f, -1.0f);
-			Vector3D<float> right = R * Vector3D<float>(1.0f, 0.0f, 0.0f);
-			Vector3D<float> up = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
+			right = R * Vector3D<float>(1.0f, 0.0f, 0.0f);
+			up = R * Vector3D<float>(0.0f, 1.0f, 0.0f);
 
 			lower_left_corner = position + (forward * focal_length) - (right * window_width * 0.5) - (up * window_height * 0.5);
 			horizontal = right * window_width;
@@ -792,7 +824,7 @@ class CameraObject : public SceneObject {
 		float getHeight() { return height; }
 
 		Ray genRay(float u, float v);
-		
+		bool pointToPixel(const Vector3D<float>& p, float& x, float& y);
 
 		Vector3D<float> lookAt;
 		
@@ -812,6 +844,8 @@ class CameraObject : public SceneObject {
 		Vector3D<float> horizontal;
 
 		Vector3D<float> forward;
+		Vector3D<float> right;
+		Vector3D<float> up;
 
 		Vector3D<float> vertical;
 

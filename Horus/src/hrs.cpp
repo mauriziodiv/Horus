@@ -25,7 +25,10 @@ std::unordered_map<std::string, ParameterType> parameterMap = {
 	{"exposure", ParameterType::EXPOSURE},
 	{"direction", ParameterType::DIRECTION},
 	{"visibility", ParameterType::VISIBILITY},
-	{"focal_length", ParameterType::FOCAL_LENGTH}
+	{"focal_length", ParameterType::FOCAL_LENGTH},
+	{"max_subdivisions", ParameterType::MAX_SUBDIVISIONS},
+	{"displacement_bound", ParameterType::DISPLACEMENT_BOUND},
+	{"target_pixel_size", ParameterType::TARGET_PIXEL_SIZE}
 };
 
 std::unordered_map<std::string_view, ShaderType> shaderTypeMap = {
@@ -47,7 +50,10 @@ std::unordered_map<std::string_view, ShaderParameterType> shaderParameterMap = {
 	{"subsurface_radius", ShaderParameterType::SUBSURFACE_RADIUS},
 	{"subsurface_anisotropy", ShaderParameterType::SUBSURFACE_ANISOTROPY},
 	{"normal_map", ShaderParameterType::NORMAL_MAP},
-	{"normal_map_gain", ShaderParameterType::NORMAL_MAP_GAIN}
+	{"normal_map_gain", ShaderParameterType::NORMAL_MAP_GAIN},
+	{ "displacement_map", ShaderParameterType::DISPLACEMENT_MAP},
+	{"displacement_map_height", ShaderParameterType::DISPLACEMENT_MAP_HEIGHT},
+	{"displacement_mid_level", ShaderParameterType::DISPLACEMENT_MID_LEVEL}
 };
 
 Ray CameraObject::genRay(float u, float v)
@@ -56,6 +62,26 @@ Ray CameraObject::genRay(float u, float v)
 	direction.normalize();
 
 	return Ray(position, direction);
+}
+
+bool CameraObject::pointToPixel(const Vector3D<float>& p, float& x, float& y)
+{
+	Vector3D<float> cameraToPoint = p - position;
+	float depth = cameraToPoint * forward;
+
+	if (depth <= 0.0f) { return false; }
+
+	Vector3D<float> pScreen = position + (cameraToPoint * (focal_length / depth));
+
+	Vector3D<float> offset = pScreen - lower_left_corner;
+
+	float u = (offset * right) / window_width;
+	float v = (offset * up) / window_height;
+
+	x = u * (width - 1);
+	y = v * (height - 1);
+
+	return true;
 }
 
 // Reads characters from the file until it finds the specified character 'c', storing the characters in the 'token' string.
@@ -483,8 +509,51 @@ void setObjectParameters(std::ifstream& file, std::string& token, std::vector<st
 							lightObject->setDirection(dir);
 						}
 					}
+					break;
+
+				case ParameterType::MAX_SUBDIVISIONS:
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
+
+						if (geometryObject)
+						{	
+							geometryObject->setMaxSubdivisions(std::stoi(token));
+						}
+					}
+					break;
+
+				case ParameterType::DISPLACEMENT_BOUND:
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
+
+						if (geometryObject)
+						{
+							geometryObject->setDisplacementBound(std::stof(token));
+						}
+					}
+					break;
+
+				case ParameterType::TARGET_PIXEL_SIZE:
+					tokenSearch(file, '/', token);
+
+					if (!token.empty())
+					{
+						GeometryObject* geometryObject = dynamic_cast<GeometryObject*>(sceneObjects.back().get());
+
+						if (geometryObject)
+						{
+							geometryObject->setTargetPixelSize(std::stof(token));
+						}
+					}
 
 					break;
+
 				}	
 		}
 		else if (!token.empty())
@@ -1038,7 +1107,63 @@ bool GeometryObject::parse()
 												p->setNormalMapGain(std::stof(token));
 											}
 										}
+										break;
 
+									case ShaderParameterType::DISPLACEMENT_MAP:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty() && token == "T")
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												// open the file and read the texture.
+												textureFilePathToken.clear();
+												tokenSearch(shaderFile, '"', textureFilePathToken);
+
+												if (!textureFilePathToken.empty())
+												{
+													if (!p->setDisplacementMapTex(textureFilePathToken))
+													{
+														std::cout << "Shader: could not load texture!" << std::endl;
+													}
+													else
+													{
+														setDisplacement(true);
+													}
+													
+												}
+											}
+										}
+										break;
+
+									case ShaderParameterType::DISPLACEMENT_MAP_HEIGHT:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setDisplacementMapHeight(std::stof(token));
+											}
+										}
+										break;
+
+									case ShaderParameterType::DISPLACEMENT_MID_LEVEL:
+										token.clear();
+
+										tokenSearch(shaderFile, '/', token);
+
+										if (!token.empty())
+										{
+											if (auto* p = std::get_if<Surface>(&getShader()))
+											{
+												p->setDisplacementMidLevel(std::stof(token));
+											}
+										}
 										break;
 
 									default:

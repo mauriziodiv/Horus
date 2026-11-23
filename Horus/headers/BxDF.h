@@ -73,7 +73,7 @@ public:
 class Surface : public BxDF
 {
 	public:
-		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f), normalMapGain(1.0f), specularWeight(1.0f) {}
+		Surface() : diffuseGain (1.0f), diffuseColor(1.0f, 1.0f, 1.0f), refractionGain(0.0f), roughness(1.0f), IOR(1.0f), subsurfaceGain(0.0f), subsurfaceColor(1.0f, 1.0f, 1.0f), subsurfaceRadius(1.0f, 1.0f, 1.0f), normalMapGain(1.0f), specularWeight(1.0f), displacementMapHeight(1.0f), displacementMidLevel(0.5f) {}
 
 		void setDiffuseGain(float g)
 		{
@@ -248,6 +248,39 @@ class Surface : public BxDF
 		bool setSpecularTex(const std::string& filePath);
 		bool setSubsurfaceGainTex(const std::string& filePath);
 		bool setNormalMapTex(const std::string& filePath);
+		bool setDisplacementMapTex(const std::string& filePath);
+
+		void setDisplacementMapHeight(float h)
+		{
+			displacementMapHeight = h;
+		}
+
+		float getDisplacementMapHeight()
+		{
+			return displacementMapHeight;
+		}
+
+		void setDisplacementMidLevel(float m)
+		{
+			displacementMidLevel = m;
+		}
+
+		float getDisplacementMidLevel()
+		{
+			return displacementMidLevel;
+		}
+
+		bool getDisplacementSample(const Point<float>& uv, float& d)
+		{
+			if (!displacementMapTex.isLoaded())
+			{
+				return false;
+			}
+
+			d = (displacementMapTex.sample(uv).x - displacementMidLevel) * displacementMapHeight;
+
+			return true;
+		}
 
 	private:
 		float diffuseGain;
@@ -258,6 +291,8 @@ class Surface : public BxDF
 		float subsurfaceGain;
 		float normalMapGain;
 		float specularWeight;
+		float displacementMapHeight;
+		float displacementMidLevel;
 		
 		Vector3D<float> subsurfaceColor;
 		Vector3D<float> subsurfaceRadius;
@@ -267,6 +302,7 @@ class Surface : public BxDF
 		TextureSet specularTex;
 		TextureSet subsurfaceGainTex;
 		TextureSet normalMapTex;
+		TextureSet displacementMapTex;
 		
 		void updateChannel(float radius, float color, float& sigmaS, float& sigmaA);
 		void updateMedium();

@@ -29,10 +29,19 @@ class Mesh : public GeometryObject
 		virtual bool loadGeometry(const char* filename) override;
 		virtual std::vector <GeometryObject*> getTriangles() override;
 
+		const std::string& getObjPath() const { return objPath; }
+
+		const std::vector<Vector3D<float>>& getVertexList() const { return triangleMesh.vertex; }
+		const std::vector<Point<float>>& getUvList() const { return triangleMesh.vertexUV; }
+
+		bool rebuildTriangles(const std::vector<Vector3D<float>>& newVertices, const std::vector<Point<float>>& newUvs, const std::vector<Vector3D<float>>& newNormals, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices);
+
 	private:
 		ObjMesh objMesh;
 		TriangleMesh triangleMesh;
 		std::vector<Triangle> triangles;
+
+		std::string objPath;
 
 		Vector3D<float> VecToVector(Vec3D v);
 

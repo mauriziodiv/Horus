@@ -6,7 +6,8 @@
 enum class TestSelection {
 	DEFAULT,
 	MAIN_LINE_ARGS,
-	SCENE_BUILDER
+	SCENE_BUILDER,
+	SUBDIVISION
 };
 
 int32_t Testing(int& argc, char* argv[]);

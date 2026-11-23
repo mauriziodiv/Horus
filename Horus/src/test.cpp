@@ -2,6 +2,7 @@
 #include "hrs.h"
 #include "util.h"
 #include <iostream>
+#include <opensubdiv/far/topologyDescriptor.h>
 
 // Helper function to convert SceneObjectType to string
 const char* SceneObjectTypeToString(SceneObjectType type)
@@ -31,6 +32,7 @@ int32_t Testing(int& argc, char* argv[])
 			std::cout << "Available Tests:" << std::endl;
 			std::cout << "  MAIN_LINE_ARGS" << std::endl;
 			std::cout << "  SCENE_BUILDER" << std::endl;
+			std::cout << "  SUBDIVISION" << std::endl;
 			return 1;
 		 }
 
@@ -61,6 +63,7 @@ TestSelection StringToTestSelection(std::string_view testName)
 {
 	if (testName == "MAIN_LINE_ARGS") return TestSelection::MAIN_LINE_ARGS;
 	if (testName == "SCENE_BUILDER") return TestSelection::SCENE_BUILDER;
+	if (testName == "SUBDIVISION") return TestSelection::SUBDIVISION;
 
 	return TestSelection::DEFAULT;
 }
@@ -145,7 +148,54 @@ void T_SCENE_BUILDER(const std::vector<std::string>& args)
 			std::cout << "SceneBuilder failed to parse the scene file." << std::endl;
 		}
 	}
-}	
+}
+
+void T_SUBDIVISION(const std::vector<std::string>& args)
+{
+	std::cout << "Subdivision Test Running" << std::endl;
+
+	// Cube topology: 6 quads, 8 vertices
+	int vertsPerFace[6] = { 4, 4, 4, 4, 4, 4 };
+
+	int vertIndices[24] = { 0, 1, 3, 2,
+							2, 3, 5, 4,
+							4, 5, 7, 6,
+							6, 7, 1, 0,
+							1, 7, 5, 3,
+							6, 0, 2, 4 };
+
+	OpenSubdiv::Far::TopologyDescriptor desc;
+	desc.numVertices = 8;
+	desc.numFaces = 6;
+	desc.numVertsPerFace = vertsPerFace;
+	desc.vertIndicesPerFace = vertIndices;
+
+	// Build the refiner from the descriptor: Catmull-Clark scheme
+	typedef OpenSubdiv::Far::TopologyRefinerFactory<OpenSubdiv::Far::TopologyDescriptor> RefinerFactory;
+
+	OpenSubdiv::Far::TopologyRefiner* refiner = RefinerFactory::Create(desc,
+		RefinerFactory::Options(OpenSubdiv::Sdc::SCHEME_CATMARK));
+
+	if (refiner == nullptr)
+	{
+		std::cout << "[FAIL] OpenSubdiv could not build the refiner" << std::endl;
+		return;
+	}
+
+	// Level 0 = the original cube, before any subdivision
+		// Subdivide uniformly: every face, 2 levels
+	refiner->RefineUniform(OpenSubdiv::Far::TopologyRefiner::UniformOptions(2));
+
+	for (int level = 0; level <= refiner->GetMaxLevel(); ++level)
+	{
+		std::cout << "Level " << level << ": "
+			<< refiner->GetLevel(level).GetNumVertices() << " vertices, "
+			<< refiner->GetLevel(level).GetNumFaces() << " faces, "
+			<< refiner->GetLevel(level).GetNumEdges() << " edges" << std::endl;
+	}
+
+	delete refiner;
+}
 
 // Run specified tests
 void RunTests(TestSelection Test, const std::vector<std::string>& args)
@@ -162,6 +212,10 @@ void RunTests(TestSelection Test, const std::vector<std::string>& args)
     case TestSelection::SCENE_BUILDER:
 		 T_SCENE_BUILDER(args);
 		 break;
+
+	case TestSelection::SUBDIVISION:
+		T_SUBDIVISION(args);
+		break;
 
 	default:
 		break;

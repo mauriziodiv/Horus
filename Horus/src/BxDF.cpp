@@ -53,6 +53,11 @@ bool Surface::setNormalMapTex(const std::string& filePath)
 	return normalMapTex.load(filePath);
 }
 
+bool Surface::setDisplacementMapTex(const std::string& filePath)
+{
+	return displacementMapTex.load(filePath);
+}
+
 void Surface::updateChannel(float radius, float color, float& sigmaS, float& sigmaA)
 {
 	if (radius <= 0.0f)
