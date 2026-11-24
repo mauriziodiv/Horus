@@ -6,6 +6,9 @@
 #include <opensubdiv/far/topologyDescriptor.h>
 #include <opensubdiv/far/primvarRefiner.h>
 #include <filesystem>
+#include <opensubdiv/bfr/refinerSurfaceFactory.h>
+#include <opensubdiv/bfr/surface.h>
+#include <opensubdiv/bfr/tessellation.h>
 
 struct Vertex
 {
@@ -568,6 +571,182 @@ bool Scene::computeEdgeRate(OpenSubdiv::Far::TopologyRefiner* refiner, const std
 			outEdgeRate[i] = cap;
 
 			continue;
+		}
+	}
+
+	return true;
+}
+
+bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const std::vector<Point<float>>& uvList, const std::vector<int>& edgeRates, std::vector<Vector3D<float>>& positions, std::vector<Point<float>>& UVs, std::vector<int>& cornerCounts, std::vector<int>& positionIndices, std::vector<int>& UVIndices)
+{
+	if (refiner == nullptr) { return false; }
+
+	const OpenSubdiv::Far::TopologyLevel& originalTopology = refiner->GetLevel(0);
+
+	if (originalTopology.GetNumEdges() != static_cast<int>(edgeRates.size())) { return false; }
+
+	OpenSubdiv::Bfr::RefinerSurfaceFactory<>::Options factoryOption;
+	factoryOption.SetDefaultFVarID(0);
+
+	OpenSubdiv::Bfr::RefinerSurfaceFactory<> factory(*refiner, factoryOption);
+
+	OpenSubdiv::Bfr::Surface<float> positionsSurface;
+	OpenSubdiv::Bfr::Surface<float> uvSurface;
+	std::vector<float> positionPatchPoints;
+	std::vector<float> uvPatchPoints;
+	std::vector<int> faceRate;
+	std::vector<int> facets;
+
+	std::vector<int> cornerTable(originalTopology.GetNumVertices(), -1);
+	std::vector<int> edgeStartTable(originalTopology.GetNumEdges(), -1);
+	std::vector<int> edgeDirTable(originalTopology.GetNumEdges(), -1);
+
+	std::vector<int> borderIndices;
+
+	OpenSubdiv::Bfr::Tessellation::Options triangleShapeOption;
+	triangleShapeOption.SetFacetSize(3);
+
+	std::vector<float> coordinates;
+
+	const OpenSubdiv::Bfr::Surface<float>::PointDescriptor surfacePointGroup = 3;
+	const OpenSubdiv::Bfr::Surface<float>::PointDescriptor uvsPointGroup = 2;
+
+	for (int i = 0; i < originalTopology.GetNumFaces(); i++)
+	{
+		if (!factory.FaceHasLimitSurface(i)) { continue; }
+
+		if (!factory.InitVertexSurface(i, &positionsSurface)) { return false; }
+		if (!factory.InitFaceVaryingSurface(i, &uvSurface)) { return false; }
+
+		positionPatchPoints.resize(positionsSurface.GetNumPatchPoints() * 3);
+		uvPatchPoints.resize(uvSurface.GetNumPatchPoints() * 2);
+
+		positionsSurface.PreparePatchPoints(&vertexList[0].x, surfacePointGroup, positionPatchPoints.data(), surfacePointGroup);
+		uvSurface.PreparePatchPoints(&uvList[0].x, uvsPointGroup, uvPatchPoints.data(), uvsPointGroup);
+
+		OpenSubdiv::Far::ConstIndexArray faceEdges = originalTopology.GetFaceEdges(i);
+		faceRate.resize(faceEdges.size());
+
+		for (int j = 0; j < faceEdges.size(); j++)
+		{
+			faceRate[j] = edgeRates[faceEdges[j]];
+		}
+
+		OpenSubdiv::Bfr::Tessellation tassellation(positionsSurface.GetParameterization(), static_cast<int>(faceRate.size()), faceRate.data(), triangleShapeOption);
+
+		if (!tassellation.IsValid()) { return false; }
+
+		coordinates.resize(tassellation.GetNumCoords() * 2);
+		tassellation.GetCoords(coordinates.data());
+
+		int firstUv = static_cast<int>(UVs.size());
+
+		for (int z = 0; z < tassellation.GetNumCoords(); z++)
+		{
+			
+			float evUvs[2];
+
+			uvSurface.Evaluate(&coordinates[2 * z], uvPatchPoints.data(), uvsPointGroup, evUvs);
+		
+			Point<float> uvs(evUvs[0], evUvs[1]);
+
+			UVs.push_back(uvs);
+		}
+
+		borderIndices.resize(tassellation.GetNumBoundaryCoords());
+		OpenSubdiv::Far::ConstIndexArray faceVertices = originalTopology.GetFaceVertices(i);
+
+		int b = 0;
+
+		for (int k = 0; k < faceEdges.size(); k++)
+		{
+			if (cornerTable[faceVertices[k]] == -1)
+			{
+				int newIndex = static_cast<int>(positions.size());
+
+				float boundaryPos[3];
+
+				positionsSurface.Evaluate(&coordinates[2 * b], positionPatchPoints.data(), surfacePointGroup, boundaryPos);
+
+				Vector3D<float> r(boundaryPos[0], boundaryPos[1], boundaryPos[2]);
+
+				positions.push_back(r);
+				
+				cornerTable[faceVertices[k]] = newIndex;
+			}
+
+			borderIndices[b] = cornerTable[faceVertices[k]];
+			b++;
+
+			int numEdgePoints = faceRate[k] - 1;
+
+			int edge = faceEdges[k];
+			int startVertex = faceVertices[k];
+
+			if (edgeStartTable[faceEdges[k]] == -1)
+			{
+				int newIndex = static_cast<int>(positions.size());
+
+				edgeStartTable[edge] = newIndex;
+				edgeDirTable[edge] = startVertex;
+
+				for (int j = 0; j < numEdgePoints; j++)
+				{
+					float edgePos[3];
+
+					positionsSurface.Evaluate(&coordinates[2 * (b + j)], positionPatchPoints.data(), surfacePointGroup, edgePos);
+
+					Vector3D<float> r(edgePos[0], edgePos[1], edgePos[2]);
+
+					positions.push_back(r);
+				}
+			}
+
+			for (int j = 0; j < numEdgePoints; j++)
+			{
+				if (startVertex == edgeDirTable[edge])
+				{
+					borderIndices[b + j] = edgeStartTable[edge] + j;
+				}
+				else
+				{
+					borderIndices[b + j] = edgeStartTable[edge] + (numEdgePoints - 1 - j);
+				}
+			}
+
+			b += numEdgePoints;
+		}
+
+		const int numBorderPoints = tassellation.GetNumBoundaryCoords();
+		const int interiorStart = static_cast<int>(positions.size());
+
+		for (int z = numBorderPoints; z < tassellation.GetNumCoords(); z++)
+		{
+			float interiorPos[3];
+
+			positionsSurface.Evaluate(&coordinates[2 * z], positionPatchPoints.data(), surfacePointGroup, interiorPos);
+
+			Vector3D<float> r(interiorPos[0], interiorPos[1], interiorPos[2]);
+
+			positions.push_back(r);
+		}
+
+		facets.resize(tassellation.GetNumFacets() * 3);
+		tassellation.GetFacets(facets.data());
+
+		for (int f = 0; f < tassellation.GetNumFacets(); f++)
+		{
+			cornerCounts.push_back(3);
+
+			for (int c = 0; c < 3; c++)
+			{
+				int m = facets[3 * f + c];
+
+				int positionIndex = (m < numBorderPoints) ? borderIndices[m] : interiorStart + (m - numBorderPoints);
+
+				positionIndices.push_back(positionIndex);
+				UVIndices.push_back(firstUv + m);
+			}
 		}
 	}
 

@@ -65,6 +65,7 @@ class Scene {
 		bool linkOpenSubdiv(OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertex, const std::vector<Point<float>>& uvs, std::vector<Vector3D<float>>& outPositions, std::vector<Point<float>>& outUvs, std::vector<int>& outCornerCounts, std::vector<int>& outPositionIndices, std::vector<int>& outUvIndices);
 		bool displace(Surface& surface, std::vector<Vector3D<float>>& displacedVertices, const std::vector<Point<float>>& uvs, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices);
 		bool computeEdgeRate(OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const float& targetPixelSize, const int& maxSubdivision, std::vector<int>& outEdgeRate);
+		bool tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const std::vector<Point<float>>& uvList, const std::vector<int>& edgeRates, std::vector<Vector3D<float>>& positions, std::vector<Point<float>>& UVs, std::vector<int>& cornerCounts, std::vector<int>& positionIndices, std::vector<int>& UVIndices);
 
 		RenderOutput renderOutput = RenderOutput::PPM;
 		Output output;
