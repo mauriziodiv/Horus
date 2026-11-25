@@ -195,7 +195,7 @@ bool Scene::lightCheck()
 		}
 	}
 
-	if (lights.size() == 0)
+	if (lights.size() == 0 && areaLights.size() == 0 && meshLights.size() == 0 && infiniteLights.size() == 0)
 	{
 		std::cout << "Warning: There are no lights in the scene!" << std::endl;
 	}
