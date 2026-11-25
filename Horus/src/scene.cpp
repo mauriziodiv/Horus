@@ -215,7 +215,7 @@ bool Scene::computeVertexNormals(const std::vector<Vector3D<float>>& positions, 
 	{
 		count = cornerCounts[i];
 
-		if (count != 4)
+		if (count != 4 && count != 3)
 		{
 			offset += count;
 			continue;
@@ -228,9 +228,19 @@ bool Scene::computeVertexNormals(const std::vector<Vector3D<float>>& positions, 
 		v0 = positions[index[0]];
 		v1 = positions[index[1]];
 		v2 = positions[index[2]];
-		v3 = positions[index[3]];
 
-		Vector3D<float> faceNormal = (v2 - v0) | (v3 - v1);
+		if (count == 4) { v3 = positions[index[3]]; }
+
+		Vector3D<float> faceNormal;
+
+		if (count == 4)
+		{
+			faceNormal = (v2 - v0) | (v3 - v1);
+		}
+		else if (count == 3)
+		{
+			faceNormal = (v1 - v0) | (v2 - v1);
+		}
 
 		for (int j = 0; j < count; ++j)
 		{
@@ -467,12 +477,8 @@ bool Scene::linkOpenSubdiv(OpenSubdiv::Far::TopologyRefiner* refiner, const std:
 	return true;
 }
 
-bool Scene::displace(Surface& surface, std::vector<Vector3D<float>>& displacedVertices, const std::vector<Point<float>>& uvs, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices)
+bool Scene::displace(Surface& surface, std::vector<Vector3D<float>>& displacedVertices, const std::vector<Point<float>>& uvs, const std::vector<int>& cornerCounts, const std::vector<int>& positionIndices, const std::vector<int>& uvIndices, const std::vector<Vector3D<float>>& normals)
 {
-	std::vector<Vector3D<float>> normals;
-
-	if (!computeVertexNormals(displacedVertices, cornerCounts, positionIndices, normals)) { return false; }
-
 	std::vector<bool> visited(displacedVertices.size(), false);
 
 	for (size_t i = 0; i < positionIndices.size(); ++i)
@@ -577,7 +583,7 @@ bool Scene::computeEdgeRate(OpenSubdiv::Far::TopologyRefiner* refiner, const std
 	return true;
 }
 
-bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const std::vector<Point<float>>& uvList, const std::vector<int>& edgeRates, std::vector<Vector3D<float>>& positions, std::vector<Point<float>>& UVs, std::vector<int>& cornerCounts, std::vector<int>& positionIndices, std::vector<int>& UVIndices)
+bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const std::vector<Vector3D<float>>& vertexList, const std::vector<Point<float>>& uvList, const std::vector<int>& edgeRates, std::vector<Vector3D<float>>& positions, std::vector<Point<float>>& UVs, std::vector<int>& cornerCounts, std::vector<int>& positionIndices, std::vector<int>& UVIndices, std::vector<Vector3D<float>>& normals)
 {
 	if (refiner == nullptr) { return false; }
 
@@ -665,12 +671,25 @@ bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const 
 				int newIndex = static_cast<int>(positions.size());
 
 				float boundaryPos[3];
+				float dU[3];
+				float dV[3];
 
-				positionsSurface.Evaluate(&coordinates[2 * b], positionPatchPoints.data(), surfacePointGroup, boundaryPos);
+				positionsSurface.Evaluate(&coordinates[2 * b], positionPatchPoints.data(), surfacePointGroup, boundaryPos, dU, dV);
 
 				Vector3D<float> r(boundaryPos[0], boundaryPos[1], boundaryPos[2]);
+				Vector3D<float> dUvec(dU[0], dU[1], dU[2]);
+				Vector3D<float> dVvec(dV[0], dV[1], dV[2]);
+
+				Vector3D<float> normal = dUvec | dVvec;
+				float normalLength = normal.getLength();
+
+				if (normalLength > 0.0f)
+				{
+					normal = normal / normalLength;
+				}
 
 				positions.push_back(r);
+				normals.push_back(normal);
 				
 				cornerTable[faceVertices[k]] = newIndex;
 			}
@@ -693,12 +712,25 @@ bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const 
 				for (int j = 0; j < numEdgePoints; j++)
 				{
 					float edgePos[3];
+					float edgeDu[3];
+					float edgeDv[3];
 
-					positionsSurface.Evaluate(&coordinates[2 * (b + j)], positionPatchPoints.data(), surfacePointGroup, edgePos);
+					positionsSurface.Evaluate(&coordinates[2 * (b + j)], positionPatchPoints.data(), surfacePointGroup, edgePos, edgeDu, edgeDv);
 
 					Vector3D<float> r(edgePos[0], edgePos[1], edgePos[2]);
+					Vector3D<float> edgeDuVec(edgeDu[0], edgeDu[1], edgeDu[2]);
+					Vector3D<float> edgeDvVec(edgeDv[0], edgeDv[1], edgeDv[2]);
+
+					Vector3D<float> edgeNormal = edgeDuVec | edgeDvVec;
+					float edgeNormalLength = edgeNormal.getLength();
+
+					if (edgeNormalLength > 0.0f)
+					{
+						edgeNormal = edgeNormal / edgeNormalLength;
+					}
 
 					positions.push_back(r);
+					normals.push_back(edgeNormal);
 				}
 			}
 
@@ -723,12 +755,25 @@ bool Scene::tasselateBfr(const OpenSubdiv::Far::TopologyRefiner* refiner, const 
 		for (int z = numBorderPoints; z < tassellation.GetNumCoords(); z++)
 		{
 			float interiorPos[3];
+			float interiorDu[3];
+			float interiorDv[3];
 
-			positionsSurface.Evaluate(&coordinates[2 * z], positionPatchPoints.data(), surfacePointGroup, interiorPos);
+			positionsSurface.Evaluate(&coordinates[2 * z], positionPatchPoints.data(), surfacePointGroup, interiorPos, interiorDu, interiorDv);
 
 			Vector3D<float> r(interiorPos[0], interiorPos[1], interiorPos[2]);
+			Vector3D<float> interiorDuVec(interiorDu[0], interiorDu[1], interiorDu[2]);
+			Vector3D<float> interiorDvVec(interiorDv[0], interiorDv[1], interiorDv[2]);
+
+			Vector3D<float> interiorNormal = interiorDuVec | interiorDvVec;
+			float interiorNormalLength = interiorNormal.getLength();
+
+			if (interiorNormalLength > 0.0f)
+			{
+				interiorNormal = interiorNormal / interiorNormalLength;
+			}
 
 			positions.push_back(r);
+			normals.push_back(interiorNormal);
 		}
 
 		facets.resize(tassellation.GetNumFacets() * 3);
@@ -1050,6 +1095,7 @@ bool Scene::displacementGeo(Mesh& mesh)
 	std::vector<int> edgeRates;
 
 	std::vector<Vector3D<float>> normals;
+	std::vector<Vector3D<float>> smoothNormals;
 
 	int numberOfVerticesTotal = 0;
 	int numberOfUvTotal = 0;
@@ -1064,7 +1110,7 @@ bool Scene::displacementGeo(Mesh& mesh)
 
 	if (!getCorners(mesh.getObjPath(), cornersCounts, positions, uvs, numberOfVerticesTotal, numberOfUvTotal, ext)) { return false; }
 
-	refiner = sendOpenSubdiv(numberOfVerticesTotal, cornersCounts, positions, numberOfUvTotal, uvs, level);
+	refiner = sendOpenSubdiv(numberOfVerticesTotal, cornersCounts, positions, numberOfUvTotal, uvs, 0);
 	if (!refiner) { return false; }
 
 	if (!computeEdgeRate(refiner, mesh.getVertexList(), mesh.getTargetPixelSize(), level, edgeRates))
@@ -1073,7 +1119,7 @@ bool Scene::displacementGeo(Mesh& mesh)
 		return false;
 	}
 
-	if (!linkOpenSubdiv(refiner, mesh.getVertexList(), mesh.getUvList(), outPositions, outUvs, outCornerCounts, outPositionIndices, outUvIndices)) 
+	if (!tasselateBfr(refiner, mesh.getVertexList(), mesh.getUvList(), edgeRates, outPositions, outUvs, outCornerCounts, outPositionIndices, outUvIndices, smoothNormals))
 	{
 		delete refiner;
 		return false; 
@@ -1081,7 +1127,7 @@ bool Scene::displacementGeo(Mesh& mesh)
 
 	delete refiner;
 
-	if (!displace(*surface, outPositions, outUvs, outCornerCounts, outPositionIndices, outUvIndices)) { return false; }
+	if (!displace(*surface, outPositions, outUvs, outCornerCounts, outPositionIndices, outUvIndices, smoothNormals)) { return false; }
 
 	if (!computeVertexNormals(outPositions, outCornerCounts, outPositionIndices, normals)) { return false; }
 

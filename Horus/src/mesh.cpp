@@ -143,13 +143,15 @@ bool Mesh::rebuildTriangles(const std::vector<Vector3D<float>>& newVertices, con
 
 	for (size_t i = 0; i < cornerCounts.size(); i++)
 	{
-		if (cornerCounts[i] != 4) 
-		{ 
+		if (cornerCounts[i] != 4 && cornerCounts[i] != 3)
+		{
 			offset += cornerCounts[i];
 			continue;
 		}
 
-		for (size_t j = 0; j < sizeof(corners) / sizeof(corners[0]); j++)
+		int cornersToWalk = (cornerCounts[i] == 3) ? 3 : 6;
+
+		for (int j = 0; j < cornersToWalk; j++)
 		{
 			int pos = offset + corners[j];
 			triangleMesh.vertexIndices.push_back(positionIndices[pos]);
