@@ -535,7 +535,22 @@ bool Scene::computeEdgeRate(OpenSubdiv::Far::TopologyRefiner* refiner, const std
 		}
 		else if (v1Check && v2Check)
 		{
-			float pixelDistance = std::sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
+			const Vector3D<float> cameraPosition = getCamera()->getPosition();
+			const Vector3D<float> forward = getCamera()->getForward();
+			const float focalLength = getCamera()->getFocalLength();
+			const float windowHeight = getCamera()->getWindowHeight();
+
+			float d1 = (v1 - cameraPosition) * forward;
+			float d2 = (v2 - cameraPosition) * forward;
+
+			float nearDepth = std::min(d1, d2);
+
+			float p = focalLength / nearDepth * (height - 1) / windowHeight;
+
+			Vector3D<float> d = v2 - v1;
+			float dLength = d.getLength();
+
+			float pixelDistance = dLength * p;
 			float edgeSubdiv = pixelDistance / targetPixelSize;
 
 			bool offScreen = (x1 < 0.0f && x2 < 0.0f) || (x1 > width - 1 && x2 > width - 1) || (y1 < 0.0f && y2 < 0.0f) || (y1 > height - 1 && y2 > height - 1);

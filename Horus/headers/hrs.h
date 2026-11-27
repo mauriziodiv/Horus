@@ -797,6 +797,7 @@ class CameraObject : public SceneObject {
 		}
 
 		void setFocalLength(float fl) { focal_length = fl / (sensorHeight * 0.5f); }
+		float getFocalLength() { return focal_length; }
 
 		void setWindow(float w, float h) 
 		{ 
@@ -817,6 +818,9 @@ class CameraObject : public SceneObject {
 			horizontal = right * window_width;
 			vertical = up * window_height;
 		}
+
+		float getWindowWidth() { return window_width; }
+		float getWindowHeight() { return window_height; }
 
 		Vector3D<float> getForward() { return forward; }
 

@@ -10,7 +10,7 @@ Open `Horus.sln` in Visual Studio 2022 and build with **Ctrl+Shift+B**, or from 
 msbuild Horus.sln /p:Configuration=Debug /p:Platform=x64
 ```
 
-Toolset v145 (bumped from v143 in `30779a7`). Headers are under `Horus/headers/`, sources under `Horus/src/`.
+Toolset v145.
 
 **Only `Debug|x64` builds.** C++17 (`stdcpp17`) and the `IMATH_DLL;OPENEXR_DLL` defines OpenEXR needs are set on that configuration only (`Horus.vcxproj:139-142`); `Release|x64` still lacks both, so it will not compile until they are added there.
 
@@ -61,8 +61,4 @@ An unknown parameter name in a `.srs` shader file **hangs the parser** rather th
 
 ## Code Style
 
-- **Types**: `PascalCase` (e.g., `GeometryObject`, `Surface`, `BoundingBox`)
-- **Methods and members**: `camelCase` (e.g., `computeNormal()`, `diffuseGain`)
-- **Indentation**: tabs
 - **Operator overloads**: `%` for element-wise multiply, `|` for cross product, `*` for dot product or scalar scale (context-dependent — check `vec_math.h`)
-- No external formatter configured; match the style of surrounding code.
